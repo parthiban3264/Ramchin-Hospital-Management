@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
-import '../../../../Pages/NotificationsPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Services/Tonic_Service.dart'; // ✅ use tonic service
 
 class AddTonicPage extends StatefulWidget {
@@ -13,7 +13,6 @@ class AddTonicPage extends StatefulWidget {
 
 class _AddTonicPageState extends State<AddTonicPage> {
   final _formKey = GlobalKey<FormState>();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   final TextEditingController tonicNameController = TextEditingController();
   final TextEditingController expiryDateController = TextEditingController();
@@ -86,8 +85,8 @@ class _AddTonicPageState extends State<AddTonicPage> {
     setState(() => _isLoading = true);
 
     try {
-      final hospitalId = await secureStorage.read(key: 'hospitalId');
-
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
       final Map<String, int> stockMap = {};
       final Map<String, double> amountMap = {};
 

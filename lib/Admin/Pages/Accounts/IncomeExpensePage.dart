@@ -1,12 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/IncomeExpence_Service.dart';
-import '../../../Services/drawer_Service.dart';
 
 class AccountIncomePage extends StatefulWidget {
   const AccountIncomePage({super.key});
@@ -17,7 +15,6 @@ class AccountIncomePage extends StatefulWidget {
 
 class _AccountIncomePageState extends State<AccountIncomePage> {
   final IncomeExpenseService _incexpService = IncomeExpenseService();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   bool showForm = false;
   bool _loading = false;
@@ -36,11 +33,12 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
   String? hospitalPlace;
   String? hospitalPhoto;
   String? _dateTime;
+  SharedPreferences? _prefs;
 
   @override
   void initState() {
     super.initState();
-    _loadHospitalInfo();
+    _initPrefs();
     fetchDrawers();
     _updateTime();
   }
@@ -49,13 +47,17 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
     _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
   }
 
-  Future<void> _loadHospitalInfo() async {
-    hospitalName = await secureStorage.read(key: 'hospitalName') ?? "Unknown";
-    hospitalPlace = await secureStorage.read(key: 'hospitalPlace') ?? "Unknown";
-    hospitalPhoto =
-        await secureStorage.read(key: 'hospitalPhoto') ??
-        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+  Future<void> _initPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadHospitalInfo();
+  }
 
+  void _loadHospitalInfo() {
+    hospitalName = _prefs?.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = _prefs?.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        _prefs?.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     setState(() {});
   }
 
@@ -93,8 +95,8 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
       _submitting = true;
       _error = null;
     });
-    final admin_Id = await secureStorage.read(key: 'userId');
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final admin_Id = _prefs?.getString('userId');
+    final hospitalId = _prefs?.getString('hospitalId');
     final data = {
       'hospital_Id': int.parse(hospitalId!),
       'reason': reasonController.text.trim(),

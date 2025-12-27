@@ -1,17 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
-
 import '../Report/ScanReportPage.dart';
-
 
 class CtScanPage extends StatefulWidget {
   final Map<String, dynamic> record;
@@ -26,7 +24,6 @@ class CtScanPage extends StatefulWidget {
 
 class _CtScanPageState extends State<CtScanPage>
     with SingleTickerProviderStateMixin {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final socketService = SocketService();
   final Color primaryColor = const Color(0xFFBF955E);
   bool _isPatientExpanded = false;
@@ -72,7 +69,9 @@ class _CtScanPageState extends State<CtScanPage>
   }
 
   void _loadHospitalLogo() async {
-    logo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
+
+    logo = prefs.getString('hospitalPhoto');
     setState(() {});
   }
 
@@ -137,7 +136,7 @@ class _CtScanPageState extends State<CtScanPage>
   //         ? consultationList[0]['id']
   //         : null;
   //
-  //     print(consultationId);
+  //
   //     // 🧾 Example of updating record (you can connect this to Firebase or API)
   //     final updatedRecord = await TestingScanningService()
   //         .updateTestingAndScanning(Id, {
@@ -206,15 +205,14 @@ class _CtScanPageState extends State<CtScanPage>
 
     try {
       final Id = widget.record['id'];
-      final Staff_Id = await secureStorage.read(key: 'userId');
+      final prefs = await SharedPreferences.getInstance();
+      final Staff_Id = prefs.getString('userId');
       final patient = widget.record['Patient'] ?? {};
       final consultationList = patient['Consultation'] ?? [];
 
       final consultationId = (consultationList.isNotEmpty)
           ? consultationList[0]['id']
           : null;
-
-      print("Consultation ID: $consultationId");
 
       // // 🧾 Update Testing and Scanning record
       // await TestingScanningService().updateTesting(Id, {
@@ -260,7 +258,6 @@ class _CtScanPageState extends State<CtScanPage>
           ? widget.record['consulateId']
           : null;
 
-      print("Consultation ID: $consultationId");
       final Id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
       await TestingScanningService().updateTesting(Id, {'status': 'COMPLETED'});
@@ -463,7 +460,6 @@ class _CtScanPageState extends State<CtScanPage>
                         ),
                         const SizedBox(height: 10),
                         TextField(
-
                           keyboardType: TextInputType.visiblePassword,
                           cursorColor: primaryColor,
 
@@ -703,7 +699,6 @@ class _CtScanPageState extends State<CtScanPage>
           // _sectionHeader("Selected X-Ray Options"),
           const SizedBox(height: 5),
 
-
           if (selectedOptions.isEmpty)
             const Text(
               "No X-Ray Options Selected",
@@ -742,7 +737,6 @@ class _CtScanPageState extends State<CtScanPage>
                 const SizedBox(height: 8),
 
                 TextField(
-
                   keyboardType: TextInputType.visiblePassword,
                   cursorColor: primaryColor,
 
@@ -889,7 +883,6 @@ class _CtScanPageState extends State<CtScanPage>
                             fit: BoxFit.cover,
                           ),
                         ),
-
 
                         // ❌ Remove button
                         Positioned(

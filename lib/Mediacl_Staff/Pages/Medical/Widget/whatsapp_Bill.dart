@@ -1,15 +1,15 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HospitalStorage {
-  static final _storage = FlutterSecureStorage();
-
   static Future<Map<String, String?>> getHospitalData() async {
+    final prefs = await SharedPreferences.getInstance();
+
     return {
-      'id': await _storage.read(key: 'hospitalId'),
-      'name': await _storage.read(key: 'hospitalName'),
-      'place': await _storage.read(key: 'hospitalPlace'),
-      'photo': await _storage.read(key: 'hospitalPhoto'),
+      'id': prefs.getString('hospitalId'),
+      'name': prefs.getString('hospitalName'),
+      'place': prefs.getString('hospitalPlace'),
+      'photo': prefs.getString('hospitalPhoto'),
     };
   }
 }

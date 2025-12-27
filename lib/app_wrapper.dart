@@ -1,6 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Pages/login/widget/HospitalLoginPage.dart';
 import 'Services/auth_service.dart';
@@ -38,8 +39,8 @@ class _AppWrapperState extends State<AppWrapper> {
       if (!mounted) return;
 
       try {
-        final storage = const FlutterSecureStorage();
-        final hospitalId = await storage.read(key: "hospitalId");
+        final prefs = await SharedPreferences.getInstance();
+        final hospitalId = prefs.getString('hospitalId');
         if (hospitalId == null) return;
 
         final response = await HospitalService().getHospital();
@@ -72,7 +73,7 @@ class _AppWrapperState extends State<AppWrapper> {
           _showInactiveDialog();
         }
       } catch (e) {
-        debugPrint("Error checking status: $e");
+        setState(() {});
       }
     });
   }
@@ -191,9 +192,9 @@ class _AppWrapperState extends State<AppWrapper> {
 
     _statusTimer?.cancel();
 
-    const secureStorage = FlutterSecureStorage();
+    final prefs = await SharedPreferences.getInstance();
     await AuthService().logout();
-    await secureStorage.deleteAll();
+    await prefs.clear();
 
     navigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const HospitalLoginPage()),

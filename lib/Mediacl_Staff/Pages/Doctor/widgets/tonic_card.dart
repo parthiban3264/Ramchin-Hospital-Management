@@ -153,7 +153,7 @@ class _TonicCardState extends State<TonicCard>
       entry.currentTonic['name'] = tonic['tonicName'] ?? '';
       entry.currentTonic['stock'] = tonic['stock'] ?? {};
       entry.currentTonic['amount'] = tonic['amount'] ?? {};
-      print(entry.currentTonic['amount'] = tonic['amount'] ?? {});
+
       entry.currentTonic['tonic_Id'] = tonic['id'] ?? '';
       entry.nameController.text = entry.currentTonic['name'];
       // entry.selectedDose.text =
@@ -298,7 +298,7 @@ class _TonicCardState extends State<TonicCard>
     if (name.isEmpty || qty == null) return null;
 
     final total = (tonic['amount']?[qty] ?? '0').toString();
-    print('totall:$total');
+
     return {...tonic, 'quantity': qty, 'total': total, 'qtyPerDose': Doase};
   }
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Services/consultation_service.dart';
 
@@ -28,7 +28,6 @@ class AssistantDrOverviewPage extends StatefulWidget {
 }
 
 class _AssistantDrOverviewPageState extends State<AssistantDrOverviewPage> {
-  final secureStorage = const FlutterSecureStorage();
   final ConsultationService _consultationService = ConsultationService();
 
   late Future<void> _dashboardFuture;
@@ -78,21 +77,24 @@ class _AssistantDrOverviewPageState extends State<AssistantDrOverviewPage> {
 
       return DateTime(year, month, day, hour, minute);
     } catch (e) {
-      print("Date Parse Error: $raw");
       return null;
     }
   }
 
   // ----------------- LOAD DATA -----------------
   Future<void> _loadDashboardData() async {
-    final storedDoctorId = await secureStorage.read(key: 'assistantDoctorId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final storedDoctorId = prefs.getString('assistantDoctorId');
     if (storedDoctorId == null) throw Exception("Doctor ID not found");
 
     doctorId = storedDoctorId;
 
-    hospitalName = await secureStorage.read(key: 'hospitalName');
-    hospitalPlace = await secureStorage.read(key: 'hospitalPlace');
-    hospitalPhoto = await secureStorage.read(key: 'hospitalPhoto');
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
 
     final consultations = await _consultationService.getAllConsultations();
 

@@ -64,7 +64,7 @@
 //       );
 //       Navigator.pop(context, true);
 //     } catch (e) {
-//       print('Error saving data: $e');
+//
 //       ScaffoldMessenger.of(
 //         context,
 //       ).showSnackBar(SnackBar(content: Text('Failed to add scan and test')));
@@ -213,9 +213,9 @@
 // }
 
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Scan_Test_Get-Service.dart';
@@ -234,8 +234,6 @@ class _AddScanAndTestPageState extends State<AddScanAndTestPage>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
-
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   String selectedType = 'TEST';
 
@@ -273,8 +271,8 @@ class _AddScanAndTestPageState extends State<AddScanAndTestPage>
       return;
     }
 
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
-
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     final body = {
       "hospital_Id": int.parse(hospitalId!),
       "title": _titleController.text,

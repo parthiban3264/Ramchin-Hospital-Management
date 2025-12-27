@@ -13,7 +13,7 @@
 //       headers: {'Content-Type': 'application/json'},
 //       body: jsonEncode(data),
 //     );
-//     print(response.body);
+//
 //     if (response.statusCode != 201 && response.statusCode != 200) {
 //       throw Exception('Failed to create treatment: ${response.body}');
 //     }
@@ -21,7 +21,9 @@
 // }
 
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../utils/utils.dart';
 
 class TreatmentService {
@@ -44,7 +46,7 @@ class TreatmentService {
     final url = Uri.parse('$baseUrl/treatments/all');
     try {
       final response = await http.get(url);
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -70,7 +72,7 @@ class TreatmentService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {

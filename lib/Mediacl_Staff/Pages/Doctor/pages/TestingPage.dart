@@ -1,17 +1,16 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Scan_Test_Get-Service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
-
 import '../../../../Services/testing&scanning_service.dart';
-
 import '../../../../utils/utils.dart';
-import 'DrOpDashboard/DrOutPatientQueuePage.dart';
 
 class TestingPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -29,7 +28,6 @@ class TestingPage extends StatefulWidget {
 
 class _TestingPageState extends State<TestingPage> {
   final Color primaryColor = const Color(0xFFBF955E);
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final socketService = SocketService();
 
   bool _isSubmitting = false;
@@ -53,7 +51,6 @@ class _TestingPageState extends State<TestingPage> {
   List<Map<String, dynamic>> submittedTests = [];
   Map<String, List<Map<String, dynamic>>> mergedPaymentGroups = {};
 
-
   @override
   void initState() {
     super.initState();
@@ -67,7 +64,6 @@ class _TestingPageState extends State<TestingPage> {
 
       final currentSubmitTest =
           await _CurrentTestingScanningService.getAllTestingAndScanningData();
-
 
       setState(() {
         tests = fetchedTests;
@@ -102,9 +98,7 @@ class _TestingPageState extends State<TestingPage> {
     int total = 0;
     for (var optName in selectedOptions) {
       for (var option in options) {
-
         if (option['optionName'] == optName) {
-
           total += option['price'] as int? ?? 0;
           break;
         }
@@ -127,7 +121,8 @@ class _TestingPageState extends State<TestingPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final doctorId = await secureStorage.read(key: 'userId') ?? '';
+      final prefs = await SharedPreferences.getInstance();
+      final doctorId = prefs.getString('userId') ?? '';
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
@@ -200,15 +195,13 @@ class _TestingPageState extends State<TestingPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('testOptionName: ${widget.testOptionName}');
-
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(140),
+        preferredSize: const Size.fromHeight(100),
         child: Column(
           children: [
             Container(
@@ -259,27 +252,7 @@ class _TestingPageState extends State<TestingPage> {
               ),
             ),
 
-
-
             // SEARCH FIELD
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: TextField(
-                onChanged: (value) {
-                  setState(() => searchQuery = value);
-                },
-                decoration: InputDecoration(
-                  hintText: "Search test name. . .",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -298,7 +271,27 @@ class _TestingPageState extends State<TestingPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    child: TextField(
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Search test name. . .",
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 5),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
                   if (savedTests.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -415,7 +408,6 @@ class _TestingPageState extends State<TestingPage> {
                       ),
                     ),
 
-
                   Container(
                     child: Column(
                       children: [
@@ -528,7 +520,6 @@ class _TestingPageState extends State<TestingPage> {
 
           // OPTIONS
           ...displayedOptions.map((opt) {
-
             //final String name = opt['name'] ?? '';
             final String name = opt['optionName'] ?? '';
 
@@ -537,7 +528,6 @@ class _TestingPageState extends State<TestingPage> {
             final resultMatch = (completedResults.cast<Map<String, dynamic>>())
                 .firstWhere(
                   (r) =>
-
                       r['Test']?.toString().toLowerCase() == name.toLowerCase(),
 
                   orElse: () => <String, dynamic>{},
@@ -625,7 +615,6 @@ class _TestingPageState extends State<TestingPage> {
                               mutable.remove(name);
                             }
 
-
                             // savedTests[testName] = {
                             //   'options': mutable,
                             //   'description':
@@ -650,7 +639,6 @@ class _TestingPageState extends State<TestingPage> {
                                 ),
                               };
                             }
-
                           });
                         },
                         contentPadding: const EdgeInsets.symmetric(
@@ -726,7 +714,6 @@ class _TestingPageState extends State<TestingPage> {
     );
   }
 }
-
 
 //import 'dart:convert';
 // import 'package:flutter/material.dart';
@@ -962,7 +949,7 @@ class _TestingPageState extends State<TestingPage> {
 //
 //   @override
 //   Widget build(BuildContext context) {
-//     print('testOptionName: ${widget.testOptionName}');
+//
 //     if (_isLoading) {
 //       return const Scaffold(body: Center(child: CircularProgressIndicator()));
 //     }
@@ -1496,4 +1483,3 @@ class _TestingPageState extends State<TestingPage> {
 //     );
 //   }
 // }
-

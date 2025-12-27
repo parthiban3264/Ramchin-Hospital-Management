@@ -1,6 +1,7 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -100,7 +101,7 @@ class _UploadMedicineState extends State<UploadMedicine> {
         final file = File(
           '/storage/emulated/0/Download/medicine_template.xlsx',
         );
-        print('dir.path $file');
+
         await file.writeAsBytes(response.bodyBytes);
 
         setState(() {

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Pages/payment_modal.dart';
 import '../../../../Services/consultation_service.dart';
@@ -30,7 +30,6 @@ class FeesPaymentPage extends StatefulWidget {
 }
 
 class _FeesPaymentPageState extends State<FeesPaymentPage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   bool _isProcessing = false;
   final socketService = SocketService();
   String? logo;
@@ -73,9 +72,10 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
   }
 
   void _loadHospitalLogo() async {
-    logo = await secureStorage.read(key: 'hospitalPhoto');
-    hospitalName = await secureStorage.read(key: 'hospitalName');
-    hospitalPlace = await secureStorage.read(key: 'hospitalPlace');
+    final prefs = await SharedPreferences.getInstance();
+    logo = prefs.getString('hospitalPhoto');
+    hospitalName = prefs.getString('hospitalName');
+    hospitalPlace = prefs.getString('hospitalPlace');
     setState(() {});
   }
 
@@ -150,7 +150,6 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
       return DateFormat("dd-MM-yyyy hh:mm a").format(date);
     } catch (e) {
-      print("Date parse error: $e");
       return value.toString();
     }
   }
@@ -176,7 +175,9 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
     // ✅ Payment succeeded → update backend
     setState(() => _isProcessing = true);
-    final Staff_Id = await secureStorage.read(key: 'userId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final Staff_Id = prefs.getString('userId');
     final response = await PaymentService().updatePayment(paymentId, {
       'status': 'PAID',
       // 'transactionId': paymentResult['transactionId'],
@@ -184,13 +185,10 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       "paymentType": paymentMode,
       "updatedAt": _dateTime.toString(),
     });
-    print("patienttt${widget.patient}");
-    print("ffgjg${widget.fee}");
+
     final Id = widget.patient['Consultation']?[0]?['id'];
     final consultationId = widget.fee['consultation_Id'];
 
-    print(consultationId);
-    print(type);
     if (type == 'REGISTRATIONFEE') {
       await ConsultationService().updateConsultation(consultationId, {
         "paymentStatus": true,
@@ -201,14 +199,12 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       final testId = (testings != null && testings.isNotEmpty)
           ? testings[0]['payment_Id']
           : null;
-      print(testId);
+
       await TestingScanningService().updateTestAndScan(testId);
       await ConsultationService().updateConsultation(consultationId, {
         "queueStatus": 'PENDING',
       });
-    } else {
-      print('Invalid type');
-    }
+    } else {}
     // else if (type == 'MEDICINEFEEANDINJECTIONFEE') {
     // await ConsultationService().updateConsultation(Id, {
     // "paymentStatus": true,
@@ -549,7 +545,6 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // 🔹 Print Button
                             ElevatedButton.icon(
                               onPressed: () async {
                                 final pdf = await _buildPdf();

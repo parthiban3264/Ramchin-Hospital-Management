@@ -1,31 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Services/consultation_service.dart';
 import '../../../Services/testing&scanning_service.dart';
-
-const Color customGold = Color(0xFFBF955E);
-const Color backgroundColor = Color(0xFFFFF7E6);
-const Color cardColor = Colors.white;
-
-const TextStyle sectionTitleStyle = TextStyle(
-  fontSize: 18,
-  fontWeight: FontWeight.bold,
-  color: Colors.black87,
-);
-
-const TextStyle cardTitleStyle = TextStyle(
-  fontSize: 15,
-  fontWeight: FontWeight.w600,
-  color: Colors.black87,
-);
-
-const TextStyle cardValueStyle = TextStyle(
-  fontSize: 26,
-  fontWeight: FontWeight.bold,
-  color: Colors.black87,
-);
+import './widgets/overview_widget.dart';
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({super.key});
@@ -35,7 +14,6 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
-  final secureStorage = const FlutterSecureStorage();
   final ConsultationService _consultationService = ConsultationService();
   final TestingScanningService _testingService = TestingScanningService();
 
@@ -51,26 +29,20 @@ class _OverviewPageState extends State<OverviewPage> {
   // Consultation
   int regToday = 0;
   int regOverall = 0;
-
   int pendingToday = 0;
   int pendingOverall = 0;
-
   int ongoingToday = 0;
   int ongoingOverall = 0;
-
   int completedToday = 0;
   int completedOverall = 0;
-
   int cancelToday = 0;
   int cancelOverall = 0;
 
   // Testing
   int testPendingToday = 0;
   int testPendingOverall = 0;
-
   int testOngoingToday = 0;
   int testOngoingOverall = 0;
-
   int testCompletedToday = 0;
   int testCompletedOverall = 0;
 
@@ -82,17 +54,15 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      hospitalName = name ?? "Unknown Hospital";
-      hospitalPlace = place ?? "Unknown Place";
-      hospitalPhoto =
-          photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
-    });
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+
+    setState(() {});
   }
 
   bool isToday(String? dateString) {
@@ -105,7 +75,7 @@ class _OverviewPageState extends State<OverviewPage> {
       return date.year == now.year &&
           date.month == now.month &&
           date.day == now.day;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -124,68 +94,59 @@ class _OverviewPageState extends State<OverviewPage> {
 
       // Consultation Today
       regToday = todayConsult.length;
-      pendingToday = todayConsult
-          .where((c) => c['status'].toString().toLowerCase() == 'pending')
-          .length;
+      pendingToday = todayConsult.where((c) => c['status'] == 'pending').length;
       ongoingToday = todayConsult
           .where(
-            (c) =>
-                c['status'].toString().toLowerCase() == 'ongoing' ||
-                c['status'].toString().toLowerCase() == 'endprocessing',
+            (c) => c['status'] == 'ongoing' || c['status'] == 'endprocessing',
           )
           .length;
       completedToday = todayConsult
-          .where((c) => c['status'].toString().toLowerCase() == 'completed')
+          .where((c) => c['status'] == 'completed')
           .length;
       cancelToday = todayConsult
-          .where((c) => c['status'].toString().toLowerCase() == 'cancelled')
+          .where((c) => c['status'] == 'cancelled')
           .length;
 
-      // Consultation overall
+      // Consultation Overall
       regOverall = consultation.length;
       pendingOverall = consultation
-          .where((c) => c['status'].toString().toLowerCase() == 'pending')
+          .where((c) => c['status'] == 'pending')
           .length;
       ongoingOverall = consultation
           .where(
-            (c) =>
-                c['status'].toString().toLowerCase() == 'ongoing' ||
-                c['status'].toString().toLowerCase() == 'endprocessing',
+            (c) => c['status'] == 'ongoing' || c['status'] == 'endprocessing',
           )
           .length;
       completedOverall = consultation
-          .where((c) => c['status'].toString().toLowerCase() == 'completed')
+          .where((c) => c['status'] == 'completed')
           .length;
       cancelOverall = consultation
-          .where((c) => c['status'].toString().toLowerCase() == 'cancelled')
+          .where((c) => c['status'] == 'cancelled')
           .length;
 
-      // Testing Today
-      testCompletedToday = todayTest
-          .where((t) => t['status'].toString().toLowerCase() == 'completed')
-          .length;
+      // Testing
       testPendingToday = todayTest
-          .where((t) => t['status'].toString().toLowerCase() == 'pending')
+          .where((t) => t['status'] == 'pending')
           .length;
       testOngoingToday = todayTest
-          .where((t) => t['status'].toString().toLowerCase() == 'ongoing')
+          .where((t) => t['status'] == 'ongoing')
+          .length;
+      testCompletedToday = todayTest
+          .where((t) => t['status'] == 'completed')
           .length;
 
-      // Testing Overall
-      testCompletedOverall = testData
-          .where((t) => t['status'].toString().toLowerCase() == 'completed')
-          .length;
       testPendingOverall = testData
-          .where((t) => t['status'].toString().toLowerCase() == 'pending')
+          .where((t) => t['status'] == 'pending')
           .length;
       testOngoingOverall = testData
           .where(
-            (t) =>
-                t['status'].toString().toLowerCase() == 'ongoing' ||
-                t['status'].toString().toLowerCase() == 'endprocessing',
+            (t) => t['status'] == 'ongoing' || t['status'] == 'endprocessing',
           )
           .length;
-    } catch (e) {
+      testCompletedOverall = testData
+          .where((t) => t['status'] == 'completed')
+          .length;
+    } catch (_) {
       networkError = true;
     }
 
@@ -193,7 +154,7 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   // -------------------------------------------------------------------
-  // UI BUILD
+  // UI
   // -------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
@@ -216,69 +177,44 @@ class _OverviewPageState extends State<OverviewPage> {
                 children: [
                   _buildHospitalCard(),
                   const SizedBox(height: 22),
-                  _modeButtons(),
+                  modeButtons(),
                   const SizedBox(height: 20),
 
-                  if (networkError) _networkErrorCard(),
+                  if (networkError) networkErrorCard(context),
 
-                  _buildSectionTitle(
+                  buildSectionTitle(
+                    context,
                     "Consultations (${showToday ? "Today" : "Overall"})",
                   ),
                   const SizedBox(height: 12),
 
-                  _buildGrid([
-                    _metricBox(
+                  buildGrid(context, [
+                    metricBox(
                       "Registered",
                       showToday ? "$regToday" : "$regOverall",
                       Icons.person_add_alt_1_rounded,
                     ),
-                    _metricBox(
+                    metricBox(
                       "Waiting",
                       showToday ? "$pendingToday" : "$pendingOverall",
                       Icons.pending_actions_outlined,
                     ),
-                    _metricBox(
+                    metricBox(
                       "Consulting",
                       showToday ? "$ongoingToday" : "$ongoingOverall",
                       Icons.timelapse_rounded,
                     ),
-                    _metricBox(
+                    metricBox(
                       "Completed",
                       showToday ? "$completedToday" : "$completedOverall",
                       Icons.verified_outlined,
                     ),
-                    _metricBox(
+                    metricBox(
                       "Cancelled",
                       showToday ? "$cancelToday" : "$cancelOverall",
                       Icons.cancel_outlined,
                     ),
                   ]),
-
-                  // const SizedBox(height: 28),
-                  // _buildSectionTitle(
-                  //   "Testing & Scanning (${showToday ? "Today" : "Overall"})",
-                  // ),
-                  // const SizedBox(height: 12),
-                  //
-                  // _buildGrid([
-                  //   _metricBox(
-                  //     "Pending",
-                  //     showToday ? "$testPendingToday" : "$testPendingOverall",
-                  //     Icons.science_outlined,
-                  //   ),
-                  //   _metricBox(
-                  //     "Ongoing",
-                  //     showToday ? "$testOngoingToday" : "$testOngoingOverall",
-                  //     Icons.biotech_rounded,
-                  //   ),
-                  //   _metricBox(
-                  //     "Completed",
-                  //     showToday
-                  //         ? "$testCompletedToday"
-                  //         : "$testCompletedOverall",
-                  //     Icons.check_circle_outline_rounded,
-                  //   ),
-                  // ]),
                 ],
               ),
             ),
@@ -289,21 +225,9 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   // -------------------------------------------------------------------
-  // WIDGETS (AdminOverview UI)
+  // UI HELPERS
   // -------------------------------------------------------------------
-
-  Widget _modeButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _modeButton(true, "Today"),
-        const SizedBox(width: 10),
-        _modeButton(false, "Overall"),
-      ],
-    );
-  }
-
-  Widget _modeButton(bool today, String label) {
+  Widget modeButton(bool today, String label) {
     final bool active = today == showToday;
 
     return GestureDetector(
@@ -327,80 +251,60 @@ class _OverviewPageState extends State<OverviewPage> {
     );
   }
 
+  Widget modeButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        modeButton(true, "Today"),
+        const SizedBox(width: 10),
+        modeButton(false, "Overall"),
+      ],
+    );
+  }
+
   Widget _buildHospitalCard() {
+    final photoUrl = hospitalPhoto;
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFEDBA77), Color(0xFFC59A62)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomLeft,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 5)),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child: Image.network(
-                hospitalPhoto ?? "",
-                height: 65,
-                width: 65,
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => const Icon(
-                  Icons.local_hospital,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hospitalName ?? "",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    hospitalPlace ?? "",
-                    style: const TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _networkErrorCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade300),
       ),
       child: Row(
-        children: const [
-          Icon(Icons.wifi_off_rounded, color: Colors.red),
-          SizedBox(width: 10),
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: photoUrl == null || photoUrl.isEmpty
+                ? _buildPlaceholderAvatar()
+                : Image.network(
+                    photoUrl,
+                    height: 65,
+                    width: 65,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildPlaceholderAvatar(),
+                  ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              "Network error! Unable to load data.",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hospitalName ?? "",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  hospitalPlace ?? "",
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
+                ),
+              ],
             ),
           ),
         ],
@@ -408,61 +312,15 @@ class _OverviewPageState extends State<OverviewPage> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [Text(title, style: sectionTitleStyle)],
-    );
-  }
-
-  Widget _buildGrid(List<Widget> cards) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.25,
-      children: cards,
-    );
-  }
-
-  Widget _metricBox(String title, String value, IconData icon) {
+  Widget _buildPlaceholderAvatar() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            offset: const Offset(0, 5),
-            blurRadius: 8,
-          ),
-        ],
+      height: 65,
+      width: 65,
+      decoration: const BoxDecoration(
+        color: Colors.white24,
+        shape: BoxShape.circle,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: customGold, size: 28),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: cardTitleStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Center(child: Text(value, style: cardValueStyle)),
-        ],
-      ),
+      child: const Icon(Icons.local_hospital, color: Colors.white),
     );
   }
 }

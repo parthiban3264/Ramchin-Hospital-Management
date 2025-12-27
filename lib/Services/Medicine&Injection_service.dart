@@ -7,14 +7,13 @@ import '../utils/utils.dart';
 class MedicineInjectionService {
   /// Create a Medicine/Injection record
   Future<void> createMedicineInjection(Map<String, dynamic> data) async {
-    print(data);
     final url = Uri.parse('$baseUrl/medicine-and-injection/create');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
-    print(response.body);
+
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception('Failed to create medicine/injection: ${response.body}');
     }
@@ -59,7 +58,6 @@ class MedicineInjectionService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(payload),
     );
-    print(res.body);
 
     if (res.statusCode == 200 || res.statusCode == 201) {
       final decoded = jsonDecode(res.body);

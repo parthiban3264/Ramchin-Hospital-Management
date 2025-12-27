@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:health_icons/health_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrInPatientQueuePage.dart';
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOutPatientQueuePage.dart';
@@ -19,20 +20,16 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/InjectionQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/LabQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/MriScanQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/OpQueuePage.dart';
-
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/OpstetricsQueuePage.dart';
-
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/PetScanQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/UltersoundQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/X-RayQueuePage.dart';
 import '../../Services/admin_service.dart';
-
 import 'Accounts/AccountsDrawerPage.dart';
 import 'Accounts/ExpensePage.dart';
 import 'Accounts/FinancePage.dart';
 import 'Accounts/IncomeExpensePage.dart';
-import 'package:health_icons/health_icons.dart';
 
 class AdminOpDashboardPage extends StatefulWidget {
   const AdminOpDashboardPage({super.key});
@@ -42,8 +39,6 @@ class AdminOpDashboardPage extends StatefulWidget {
 }
 
 class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   String? hospitalName;
   String? hospitalPlace;
   String? hospitalPhoto;
@@ -59,9 +54,10 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
   }
 
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('hospitalName');
+    final place = prefs.getString('hospitalPlace');
+    final photo = prefs.getString('hospitalPhoto');
 
     setState(() {
       hospitalName = name ?? "Unknown Hospital";
@@ -282,9 +278,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                             const SizedBox(height: 25),
                           ],
                         ),
-
                       ),
-
                     ),
                   ],
                   const SizedBox(height: 25),
@@ -337,7 +331,6 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                     builder: (_) => const SymptomsQueuePage(),
                                   ),
                                 );
-
                               }),
                             ],
                           ),
@@ -346,340 +339,6 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               _buildActionItem(Icons.queue, "Queue", () {
-// =======
-//                               },
-//                             ),
-//                             // _buildActionItem(
-//                             //   Icons.report,
-//                             //   "Failed Payments",
-//                             //   () {},
-//                             // ),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 25),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 25),
-//                 Card(
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(22),
-//                   ),
-//                   color: Colors.white.withOpacity(0.95),
-//                   elevation: 8,
-//                   shadowColor: Colors.black26,
-//                   child: Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       vertical: 30,
-//                       horizontal: 20,
-//                     ),
-//                     child: Column(
-//                       children: [
-//                         Center(
-//                           child: Text(
-//                             'Accounts',
-//                             style: TextStyle(
-//                               color: Color(0xFF886638),
-//                               fontSize: 20,
-//                               fontWeight: FontWeight.bold,
-//                             ),
-//                           ),
-//                         ),
-//                         const SizedBox(height: 25),
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(Icons.money, "Income", () {
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (_) => const AccountIncomePage(),
-//                                 ),
-//                               );
-//                             }),
-//                             _buildActionItem(Icons.healing, "Expense", () {
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (_) => const AccountExpensePage(),
-//                                 ),
-//                               );
-//                             }),
-//                             _buildActionItem(
-//                               Icons.drive_folder_upload_rounded,
-//                               "Drawing",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const AccountDrawerPage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 25),
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(Icons.bar_chart, "Finance", () {
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (_) => const FinancePage(),
-//                                 ),
-//                               );
-//                             }),
-//                           ],
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 16),
-
-//                 // 📋 Action Section Card
-//                 Card(
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(22),
-//                   ),
-//                   color: Colors.white.withOpacity(0.95),
-//                   elevation: 8,
-//                   shadowColor: Colors.black26,
-//                   child: Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       vertical: 30,
-//                       horizontal: 20,
-//                     ),
-//                     child: Column(
-//                       children: [
-//                         Center(
-//                           child: Text(
-//                             'Scan',
-//                             style: TextStyle(
-//                               color: Color(0xFF886638),
-//                               fontSize: 20,
-//                               fontWeight: FontWeight.bold,
-//                             ),
-//                           ),
-//                         ),
-//                         const SizedBox(height: 25),
-
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(
-//                               HealthIcons.xrayFilled,
-//                               "X-Ray",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const XRayQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                             _buildActionItem(
-//                               FontAwesomeIcons.brain, // MRI best match
-//                               "MRI-Scan",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const MriScanQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                             _buildActionItem(
-//                               FontAwesomeIcons.bone,
-//                               "CT-Scan",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const CtScanQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                           ],
-//                         ),
-
-//                         const SizedBox(height: 25),
-
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(
-//                               HealthIcons.ecmoFilled, // ECG
-//                               "ECG",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const EcgQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                             _buildActionItem(
-//                               HealthIcons
-//                                   .radiologyFilled, // PET Scan close match
-//                               "PET-Scan",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const PetScanQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                             _buildActionItem(
-//                               FontAwesomeIcons.brain, // EEG (brain waves)
-//                               "EEG",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const EegQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                           ],
-//                         ),
-
-//                         const SizedBox(height: 25),
-
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(
-//                               HealthIcons.ultrasoundScannerFilled, // Ultrasound
-//                               "UlterSound",
-//                               () {
-//                                 Navigator.push(
-//                                   context,
-//                                   MaterialPageRoute(
-//                                     builder: (_) => const UltersoundQueuePage(),
-//                                   ),
-//                                 );
-//                               },
-//                             ),
-//                             // _buildActionItem(
-//                             //   Icons.document_scanner_outlined,
-//                             //   "PET-Scan",
-//                             //       () {
-//                             //     Navigator.push(
-//                             //       context,
-//                             //       MaterialPageRoute(
-//                             //         builder: (_) => const CtScanQueuePage(),
-//                             //       ),
-//                             //     );
-//                             //   },
-//                             // ),
-//                             // _buildActionItem(
-//                             //   Icons.document_scanner_outlined,
-//                             //   "ECG",
-//                             //       () {
-//                             //     Navigator.push(
-//                             //       context,
-//                             //       MaterialPageRoute(
-//                             //         builder: (_) => const EcgQueuePage(),
-//                             //       ),
-//                             //     );
-//                             //   },
-//                             // ),
-//                           ],
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 16),
-
-//                 Card(
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(22),
-//                   ),
-//                   color: Colors.white.withOpacity(0.95),
-//                   elevation: 8,
-//                   shadowColor: Colors.black26,
-//                   child: Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       vertical: 30,
-//                       horizontal: 20,
-//                     ),
-//                     child: Column(
-//                       children: [
-//                         Center(
-//                           child: Text(
-//                             'Testing',
-//                             style: TextStyle(
-//                               color: Color(0xFF886638),
-//                               fontSize: 20,
-//                               fontWeight: FontWeight.bold,
-//                             ),
-//                           ),
-//                         ),
-//                         const SizedBox(height: 25),
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(Icons.science_rounded, "Lab", () {
-//                               Navigator.push(
-//                                 context,
-//                                 MaterialPageRoute(
-//                                   builder: (_) => const LabQueuePage(),
-//                                 ),
-//                               );
-//                             }),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 25),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 16),
-//                 Card(
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(22),
-//                   ),
-//                   color: Colors.white.withOpacity(0.95),
-//                   elevation: 8,
-//                   shadowColor: Colors.black26,
-//                   child: Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       vertical: 30,
-//                       horizontal: 20,
-//                     ),
-//                     child: Column(
-//                       children: [
-//                         Center(
-//                           child: Text(
-//                             'Medical Desk',
-//                             style: TextStyle(
-//                               color: Color(0xFF886638),
-//                               fontSize: 20,
-//                               fontWeight: FontWeight.bold,
-//                             ),
-//                           ),
-//                         ),
-//                         const SizedBox(height: 15),
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                           children: [
-//                             _buildActionItem(
-//                               Icons.medical_services,
-//                               "Medical",
-//                               () {
-// >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

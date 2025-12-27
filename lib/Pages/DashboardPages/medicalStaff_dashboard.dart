@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Admin/Appbar/admin_appbar_desktop.dart';
 import '../../Admin/Pages/AddingPage.dart';
 import '../../Admin/Pages/AdminDashboardPage.dart';
-import '../../Admin/Pages/AdminOverviewPage.dart';
 import '../../Drawer/MedicalStaffDrawer.dart';
 import '../../Mediacl_Staff/Appbar/MedicalStaffAppbarMobile.dart';
-
-// === Doctor Pages ===
-import '../../Mediacl_Staff/Pages/Doctor/pages/DoctorOverviewPage.dart';
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/AssistantDrOpDashboard.dart';
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOpDashboardPage.dart';
-
-// === Other Roles ===
-import '../../Mediacl_Staff/Pages/Dashboard/OpDashboard.dart';
 import '../../Mediacl_Staff/Pages/Dashboard/CashierDashboard.dart';
 import '../../Mediacl_Staff/Pages/Dashboard/LabDashboard.dart';
 import '../../Mediacl_Staff/Pages/Dashboard/MedicalDashboard.dart';
-
-// === Overview Pages ===
+// === Other Roles ===
+import '../../Mediacl_Staff/Pages/Dashboard/OpDashboard.dart';
+// === Doctor Pages ===
+import '../../Mediacl_Staff/Pages/Doctor/pages/DoctorOverviewPage.dart';
+import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/AssistantDrOpDashboard.dart';
+import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOpDashboardPage.dart'; // === Overview Pages ===
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpOverview/AssistantDrOpOverview.dart';
 import '../../Mediacl_Staff/Pages/Overview/CashierOverview.dart';
 import '../../Mediacl_Staff/Pages/Overview/LabOverview.dart';
@@ -50,7 +45,6 @@ class _MedicalStaffDashboardPageState extends State<MedicalStaffDashboardPage> {
   int selectedIndex = 0;
   List<Widget> pages = [];
 
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
   bool accessAdmin = false;
 
   Future<bool> onWillPop() async => false;
@@ -63,7 +57,9 @@ class _MedicalStaffDashboardPageState extends State<MedicalStaffDashboardPage> {
 
   // ===================== LOAD ROLE (FIXED) =====================
   Future<void> loadAccessAndInitPages() async {
-    final storedUserId = await storage.read(key: 'userId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final storedUserId = prefs.getString('userId');
 
     bool newAccessAdmin = false;
 
@@ -77,11 +73,8 @@ class _MedicalStaffDashboardPageState extends State<MedicalStaffDashboardPage> {
 
       if (staff.isNotEmpty) {
         newAccessAdmin = staff['accessAdminRole'] == true;
-
-        await storage.write(
-          key: 'accessAdminRole',
-          value: newAccessAdmin.toString(),
-        );
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('accessAdminRole', newAccessAdmin.toString());
       }
     }
 

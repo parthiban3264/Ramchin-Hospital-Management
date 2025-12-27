@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
-import 'MedicineAddPage.dart';
-import 'modify_medicine_page.dart';
+import '../MedicineAddPage.dart';
 import 'expiry_medicine_page.dart';
+import 'modify_medicine_page.dart';
 
 class MedicianPage extends StatefulWidget {
-  const MedicianPage({Key? key}) : super(key: key);
+  const MedicianPage({super.key});
 
   @override
   State<MedicianPage> createState() => _MedicianPageState();

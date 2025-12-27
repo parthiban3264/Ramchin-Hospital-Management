@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
 import '../Page/InjectionPage.dart';
@@ -22,7 +23,6 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
 
   @override
   Widget build(BuildContext context) {
-    print(consultationsFuture);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: PreferredSize(

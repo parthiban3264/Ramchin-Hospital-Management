@@ -464,7 +464,7 @@
 //           ? consultationList[0]['id']
 //           : null;
 //
-//       print("Consultation ID: $consultationId");
+//
 //
 //       // 🧾 Update Testing and Scanning record
 //       await TestingScanningService().updateTestingAndScanning(Id, {

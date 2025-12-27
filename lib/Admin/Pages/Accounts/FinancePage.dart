@@ -1,13 +1,11 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/payment_service.dart';
-
 
 enum FinanceFilter { all, register, medical, test, scan }
 
@@ -21,21 +19,20 @@ class FinancePage extends StatefulWidget {
 }
 
 class _FinancePageState extends State<FinancePage> {
-  final secureStorage = const FlutterSecureStorage();
+  SharedPreferences? _prefs;
   final PaymentService _api = PaymentService();
 
   String? hospitalName;
   String? hospitalPlace;
   String? hospitalPhoto;
   FinanceFilter _tempFilter = FinanceFilter.all;
-  DateTime _tempDate = DateTime.now();  //DateTime _today = DateTime.now();
+  DateTime _tempDate = DateTime.now(); //DateTime _today = DateTime.now();
 
   DateTime _selectedDate = DateTime.now();
   DateTime? _tempStartDate;
   DateTime? _tempEndDate;
   DateTime? _rangeStartDate;
   DateTime? _rangeEndDate;
-
 
   DateTime? _endDate;
   DateTime? _startDate;
@@ -55,19 +52,23 @@ class _FinancePageState extends State<FinancePage> {
   @override
   void initState() {
     super.initState();
-    _loadHospitalInfo();
+    _initPrefs();
     _fetchPaymentsAll();
   }
 
   // ------------------------------
   // LOAD HOSPITAL FROM STORAGE
-  Future<void> _loadHospitalInfo() async {
-    hospitalName = await secureStorage.read(key: 'hospitalName') ?? "Unknown";
-    hospitalPlace = await secureStorage.read(key: 'hospitalPlace') ?? "Unknown";
-    hospitalPhoto =
-        await secureStorage.read(key: 'hospitalPhoto') ??
-        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+  Future<void> _initPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadHospitalInfo();
+  }
 
+  void _loadHospitalInfo() {
+    hospitalName = _prefs?.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = _prefs?.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        _prefs?.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     setState(() {});
   }
 
@@ -116,7 +117,6 @@ class _FinancePageState extends State<FinancePage> {
           return type == "REGISTRATIONFEE" || hasDoctorFee;
         }).toList();
         break;
-
 
       case FinanceFilter.medical:
         base = base
@@ -190,23 +190,18 @@ class _FinancePageState extends State<FinancePage> {
         return (d.isAtSameMomentAs(start) || d.isAfter(start)) &&
             (d.isAtSameMomentAs(end) || d.isBefore(end));
       });
-
     } else if (_selectedDateFilter == DateFilter.day) {
-
       parsed.retainWhere((p) {
         final d = p['_dt'] as DateTime;
         return d.year == _selectedDate.year &&
             d.month == _selectedDate.month &&
             d.day == _selectedDate.day;
       });
-
     } else if (_selectedDateFilter == DateFilter.month) {
-
       parsed.retainWhere((p) {
         final d = p['_dt'] as DateTime;
         return d.year == _selectedDate.year && d.month == _selectedDate.month;
       });
-
     } else if (_selectedDateFilter == DateFilter.year) {
       parsed.retainWhere((p) {
         final d = p['_dt'] as DateTime;
@@ -272,7 +267,6 @@ class _FinancePageState extends State<FinancePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-
             color: Colors.black.withValues(alpha: 0.15),
 
             blurRadius: 20,
@@ -478,7 +472,6 @@ class _FinancePageState extends State<FinancePage> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-
               color: Colors.brown.withValues(alpha: 0.08),
 
               blurRadius: 5,
@@ -556,7 +549,6 @@ class _FinancePageState extends State<FinancePage> {
           ),
           boxShadow: [
             BoxShadow(
-
               color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 6,
               offset: const Offset(0, 3),
@@ -691,7 +683,6 @@ class _FinancePageState extends State<FinancePage> {
           boxShadow: selected
               ? [
                   BoxShadow(
-
                     color: Colors.brown.withValues(alpha: 0.2),
 
                     blurRadius: 6,
@@ -705,7 +696,6 @@ class _FinancePageState extends State<FinancePage> {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-
               fontSize: 14,
 
               fontWeight: FontWeight.w600,
@@ -846,7 +836,6 @@ class _FinancePageState extends State<FinancePage> {
             boxShadow: selected
                 ? [
                     BoxShadow(
-
                       color: Colors.brown.withValues(alpha: 0.2),
 
                       blurRadius: 6,
@@ -908,7 +897,6 @@ class _FinancePageState extends State<FinancePage> {
     //     totalTestOnline +
     //     totalScanOnline;
 
-
     double medMedicine = 0;
     double medTonic = 0;
     double medInjection = 0;
@@ -947,7 +935,6 @@ class _FinancePageState extends State<FinancePage> {
       final amount = sum(p["amount"]);
 
       totalAll += amount;
-
 
       // // DOCTOR FEE
       // final consultation = p['Consultation'];
@@ -1014,7 +1001,6 @@ class _FinancePageState extends State<FinancePage> {
         totalRegister += amount;
         if (paymentType == "MANUALPAY") totalRegisterCash += amount;
         if (paymentType == "ONLINEPAY") totalRegisterOnline += amount;
-
       }
 
       // MEDICAL
@@ -1036,7 +1022,6 @@ class _FinancePageState extends State<FinancePage> {
         }
       }
 
-
       // TESTING AND SCANNING
       if (type == "TESTINGFEESANDSCANNINGFEE") {
         for (var entry in p["TestingAndScanningPatients"] ?? []) {
@@ -1053,12 +1038,10 @@ class _FinancePageState extends State<FinancePage> {
             scanTypeTotals[subType] = (scanTypeTotals[subType] ?? 0) + subAmt;
             if (paymentType == "MANUALPAY") totalScanCash += subAmt;
             if (paymentType == "ONLINEPAY") totalScanOnline += subAmt;
-
           }
         }
       }
     }
-
 
     // Totals
     double totalCash =
@@ -1068,7 +1051,6 @@ class _FinancePageState extends State<FinancePage> {
         totalMedicalOnline +
         totalTestOnline +
         totalScanOnline;
-
 
     // ----------- UI COMPONENT REUSABLE ----------
     Widget statCard(String title, double value, {Color color = Colors.blue}) {
@@ -1080,7 +1062,6 @@ class _FinancePageState extends State<FinancePage> {
           border: Border.all(color: Colors.black12),
           boxShadow: [
             BoxShadow(
-
               color: Colors.black.withValues(alpha: 0.07),
 
               blurRadius: 10,
@@ -1110,7 +1091,6 @@ class _FinancePageState extends State<FinancePage> {
         ),
       );
     }
-
 
     Widget CashStatCard(
       String title,
@@ -1316,7 +1296,6 @@ class _FinancePageState extends State<FinancePage> {
       );
 
       rows.add(const SizedBox(height: 12));
-
     }
 
     // REGISTER
@@ -1392,7 +1371,6 @@ class _FinancePageState extends State<FinancePage> {
 
         rows.add(const SizedBox(height: 12));
       }
-
     }
 
     // MEDICAL
@@ -1423,7 +1401,6 @@ class _FinancePageState extends State<FinancePage> {
       );
       rows.add(const SizedBox(height: 12));
 
-
       rows.add(
         Row(
           children: [
@@ -1440,7 +1417,6 @@ class _FinancePageState extends State<FinancePage> {
       rows.add(statCard("Injection", medInjection, color: Colors.red));
 
       rows.add(const SizedBox(height: 12));
-
     }
 
     // // TEST
@@ -1514,7 +1490,6 @@ class _FinancePageState extends State<FinancePage> {
         );
 
         rows.add(const SizedBox(height: 12));
-
       }
     }
 
@@ -1538,7 +1513,6 @@ class _FinancePageState extends State<FinancePage> {
         ),
       );
       rows.add(const SizedBox(height: 12));
-
 
       // Step 1: Combine totals and count per scan type
       final Map<String, double> combinedScans = {};
@@ -1592,7 +1566,6 @@ class _FinancePageState extends State<FinancePage> {
       }
     }
 
-
     //
     //   // GRID view for scan types
     //   rows.add(
@@ -1617,7 +1590,6 @@ class _FinancePageState extends State<FinancePage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-
             color: Colors.black.withValues(alpha: 0.08),
 
             blurRadius: 16,
@@ -1761,10 +1733,8 @@ class _FinancePageState extends State<FinancePage> {
 
             // PATIENT
 
-
             final patient = p['Patient']?['name'] ?? '-';
             final patientId = p['Patient']?['id'] ?? '-';
-
 
             // CARD COLOR
             final bgColor = getCardColor(p);
@@ -1785,7 +1755,6 @@ class _FinancePageState extends State<FinancePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-
                     color: Colors.black.withValues(alpha: 0.06),
 
                     blurRadius: 10,

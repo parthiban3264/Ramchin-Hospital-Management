@@ -1,20 +1,17 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../Appbar/MobileAppbar.dart';
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Injection_Service.dart';
 import '../../../../Services/Medi_Tonic_Injection_service.dart';
 import '../../../../Services/Medicine_Service.dart';
 import '../../../../Services/Tonic_service.dart';
-
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
+import '../widgets/injection_card.dart';
 import '../widgets/medicine_card.dart';
 import '../widgets/other_card.dart';
 import '../widgets/tonic_card.dart';
-import '../widgets/injection_card.dart';
 
 class DoctorsPrescriptionPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -86,7 +83,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
         }
       }
     } catch (e) {
-      debugPrint("Error loading medicines: $e");
+      setState(() {});
     }
   }
 
@@ -102,7 +99,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
         }
       }
     } catch (e) {
-      debugPrint("Error loading medicines: $e");
+      setState(() {});
     }
   }
 
@@ -118,7 +115,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
         }
       }
     } catch (e) {
-      debugPrint("Error loading medicines: $e");
+      setState(() {});
     }
   }
 
@@ -455,7 +452,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                               "Medicine",
                               overflow: TextOverflow.ellipsis,
                             ),
-
                           ),
                         ),
                         Tab(
@@ -478,7 +474,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                           child: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 12),
                             child: Text("Others"),
-
                           ),
                         ),
                       ],
@@ -502,7 +497,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                 _buildInjectionTab(),
 
                 _buildOthersTab(),
-
               ],
             ),
           ),
@@ -570,7 +564,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
             expanded: true,
             onExpandToggle: () {},
             initialSavedMedicines: persistentMedicineEntries,
-
           ),
           const SizedBox(height: 16),
           if (submittedMedicines.isNotEmpty ||
@@ -642,7 +635,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
   //       children: [
   //         OtherCard(
   //           onAdd: (othersList) {
-  //             print("ADDED OTHERS → $othersList");
+  //
   //           },
   //         ),
   //
@@ -661,20 +654,13 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
     return Column(
       children: [
         // 🟢 Takes available height
-        Expanded(
-          child: OtherCard(
-            onAdd: (othersList) {
-              debugPrint("ADDED OTHERS → $othersList");
-            },
-          ),
-        ),
+        Expanded(child: OtherCard(onAdd: (othersList) {})),
 
         // 🔽 Summary Card (Fixed at bottom)
         _buildCombinedSummaryCard(),
 
         const SizedBox(height: 80),
       ],
-
     );
   }
 

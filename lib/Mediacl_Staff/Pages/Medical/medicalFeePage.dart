@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Pages/payment_modal.dart';
 import '../../../Services/Injection_Service.dart';
@@ -11,11 +12,8 @@ import '../../../Services/Tonic_Service.dart';
 import '../../../Services/consultation_service.dart';
 import '../../../Services/payment_service.dart';
 import '../../../Services/socket_service.dart';
-import '../../../main.dart';
-
 import 'Widget/pdf_bill_service.dart';
 import 'Widget/whatsapp_Bill.dart';
-
 
 class MedicalFeePage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -35,7 +33,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   final Color primaryColor = const Color(0xFFBF955E);
   final socketService = SocketService();
   bool showAll = false;
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final MedicineService _medicineService = MedicineService();
   bool _isLoading = false;
   bool paymentSuccess = false;
@@ -116,7 +113,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //     "stock": newStock,
   //   });
   //
-  //   print("Medicine stock updated: $oldStock → $newStock");
+
   // }
   // List<Map<String, dynamic>> stockItems = [];
   //
@@ -135,7 +132,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //   await MedicineService().updateMedicineStock(medicineId, {
   //     "stock": newStock,
   //   });
-  //   print("Medicine stock updated: $oldStock → $newStock");
+
   //
   //   return true; // continue payment
   // }
@@ -197,7 +194,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //     "stock": stockMap,
   //   });
   //
-  //   print("Injection stock updated: $dose : $oldStock → $newStock");
   // }
   //
   // Future<void> updateTonicStock(Map<String, dynamic> item) async {
@@ -223,7 +219,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //
   //   await TonicService().updateTonicStock(tonicId, {"stock": stockMap});
   //
-  //   print("Tonic stock updated: $stockKey : $oldStock → $newStock");
   // }
   //
   // Future<void> checkTonicStock(
@@ -351,7 +346,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       });
     }
 
-    print("🔍 Final stock items: $stockItems");
     return stockItems;
   }
 
@@ -378,7 +372,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
     // 🟢 No warning & No error → Directly allow payment
     if (filteredItems.isEmpty) {
-      print("✔ No stock issues. Proceed without dialog.");
       return true;
     }
 
@@ -390,9 +383,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       context: context,
       title: hasError ? "Stock Error" : "Stock Warning",
       items: filteredItems,
-      onNotify: () {
-        print("Sending stock alert notification...");
-      },
+      onNotify: () {},
     );
 
     // ❌ If error exists → cannot proceed
@@ -415,8 +406,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       await MedicineService().updateMedicineStock(med['Medician']['id'], {
         "stock": newStock,
       });
-
-      print("Medicine stock updated: $stock → $newStock");
     }
 
     // Injections
@@ -438,8 +427,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       await InjectionService().updateInjectionStock(inj['Injection']['id'], {
         "stock": stockMap,
       });
-
-      print("Injection stock updated: $dose : $current → $newStock");
     }
     // for (var inj in injections) {
     //   if (inj['selected'] != true) continue;
@@ -472,9 +459,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     //     "stock": stockMap,
     //   });
     //
-    //   print(
-    //     "Updated → Dose: $dose | Used: $qtyUsed IU | Vials: $vialsUsed | $current → $newStock",
-    //   );
+
     // }
 
     // Tonics
@@ -495,8 +480,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       await TonicService().updateTonicStock(tonic['Tonic']['id'], {
         "stock": stockMap,
       });
-
-      print("Tonic stock updated: $stockKey : $current → $newStock");
     }
   }
 
@@ -764,7 +747,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         ).showSnackBar(SnackBar(content: Text(userMessage)));
       }
     } catch (e) {
-      print('❌ Error: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
@@ -779,7 +761,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
       // Update medicines
       for (var item in medicines) {
-        print('medicinesID ${item["id"]}');
         await service.updateMedicationRecord(
           type: "medicine",
           id: item["id"],
@@ -794,7 +775,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         );
       }
       // for (var item in medicines) {
-      //   print('medicinesID ${item["id"]}');
+
       //
       //   final int reduceDays =
       //       int.tryParse(item['currentDays'].toString()) ?? 0;
@@ -843,10 +824,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
           },
         );
       }
-
-      print("✅ Medication/Tonic/Injection status updated successfully");
     } catch (e) {
-      print("❌ Failed updating medication status: $e");
       throw Exception("Failed updating medication status");
     }
   }
@@ -856,7 +834,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //   setState(() => _isLoading = true);
   //
   //   try {
-  //     print(consultation);
+  //
   //
   //     final consultationId = consultation['id'];
   //
@@ -905,7 +883,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //     //   await updateInjectionStock(item);
   //     // }
   //
-  //     print('✅ paymentId: $paymentId');
+  //
   //
   //     // 💳 Open payment modal (disable loading while waiting for dialog)
   //     setState(() => _isLoading = false);
@@ -953,7 +931,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //       );
   //     }
   //   } catch (e) {
-  //     print('❌ Error: $e');
+  //
   //     ScaffoldMessenger.of(context).showSnackBar(
   //       SnackBar(
   //         content: Text('Medical Payment failed: $e'),
@@ -1065,7 +1043,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   //       );
   //     }
   //   } catch (e) {
-  //     print('❌ Error: $e');
+  //
   //     ScaffoldMessenger.of(context).showSnackBar(
   //       SnackBar(
   //         content: Text('Medical Payment failed: $e'),
@@ -1136,8 +1114,9 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       }
 
       setState(() => _isLoading = true);
+      final prefs = await SharedPreferences.getInstance();
       final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
-      final staffId = await secureStorage.read(key: 'userId');
+      final staffId = prefs.getString('userId');
 
       await PaymentService().updatePayment(paymentId, {'amount': totalCharges});
       await PaymentService().updatePayment(paymentId, {
@@ -1146,14 +1125,13 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         'paymentType': paymentMode,
         'updatedAt': _dateTime.toString(),
       });
-      print('this work');
+
       // 3️⃣ Update stock after payment
       await updateStockAfterPayment(
         medicines: (medicines).cast<Map<String, dynamic>>(),
         injections: (injections).cast<Map<String, dynamic>>(),
         tonics: (tonics).cast<Map<String, dynamic>>(),
       );
-
 
       if (mounted) {
         setState(() => paymentSuccess = true);
@@ -1166,7 +1144,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         await updateMedicationStatus();
       }
     } catch (e) {
-      print('❌ Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Medical Payment failed: $e'),
@@ -1180,10 +1157,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
   @override
   Widget build(BuildContext context) {
-    print('medical $consultation');
-    print('MedicinePatient:${consultation['MedicinePatient']}');
-    print('TonicPatient:${consultation['TonicPatient']}');
-    print('InjectionPatient:${consultation['InjectionPatient']}');
     final patient = consultation['Patient'] ?? {};
     final doctor = consultation['Doctor'] ?? {};
     final drAllocatedDays =
@@ -1261,7 +1234,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         padding: const EdgeInsets.all(8),
 
         child: paymentSuccess || widget.index == 1
-
             ? _buildPaidBillView(patient, doctor)
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1451,7 +1423,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
   // -------------------- UPDATE DAYS --------------------
   void _updateDays(Map<String, dynamic> med, int newDays, int doctorMaxDays) {
-    print(doctorMaxDays);
     int allowedMax = med['allowedMax'] ?? doctorMaxDays;
     if (newDays < 1 || newDays > allowedMax) return;
 
@@ -1695,15 +1666,9 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     final phoneNumber = patient['phone']?['mobile'] ?? '';
     final selectedMedicines = medicines
         .where((m) => m['selected'] == true && m['status'] != 'CANCELLED')
-
         .toList();
-    print("🔍 All medicines:");
-    for (var m in medicines) {
-      print(
-        "Name: ${m['medicineName'].toString()}  Selected: ${m['selected']}",
-      );
-    }
 
+    for (var m in medicines) {}
 
     final selectedTonics = tonics
         .where((t) => t['selected'] == true && t['status'] != 'CANCELLED')
@@ -1713,7 +1678,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         .toList();
 
     if (paymentSuccess || widget.index == 1) {
-
       // ✅ Prescription Bill layout shown after payment success
       return Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1798,7 +1762,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                     final amt = (i['total'] ?? 0).toStringAsFixed(1);
 
                     return [name, "$qty", "₹ $amt"];
-
                   }).toList(),
                 ),
                 const SizedBox(height: 12),
@@ -1904,7 +1867,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                             )
                           : const Icon(Icons.check_circle, color: Colors.white),
                       label: Text(
-
                         _isLoading ? "Updating..." : "OK ",
 
                         style: const TextStyle(

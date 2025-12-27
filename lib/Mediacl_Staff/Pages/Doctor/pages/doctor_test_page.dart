@@ -1,12 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
-import '../../../../Services/consultation_service.dart';
 import '../../../../utils/utils.dart';
-import 'DrOpDashboard/DrOutPatientQueuePage.dart';
 
 class DoctorTestPage extends StatefulWidget {
   final String testName;
@@ -25,7 +25,6 @@ class DoctorTestPage extends StatefulWidget {
 class _DoctorTestPageState extends State<DoctorTestPage> {
   final TextEditingController _descriptionController = TextEditingController();
   final Set<String> selectedOptions = {};
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final Color primaryColor = const Color(0xFFBF955E);
 
   bool _isLoading = false;
@@ -200,10 +199,12 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
     });
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
-      final doctorId = await secureStorage.read(key: 'userId') ?? '';
+      final doctorId = prefs.getString('userId') ?? '';
 
       final data = {
         "hospital_Id": hospitalId,
@@ -243,7 +244,7 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
             backgroundColor: Colors.green.shade600,
           ),
         );
-        print(response.body);
+
         Navigator.pop(context, true);
         // Navigator.push(
         //   context,
@@ -452,30 +453,30 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
     );
   }
 
-  Widget _buildAmountContainer() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: _containerDecoration(),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Total Amount:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Text(
-            '₹ ${totalAmount.toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Colors.green,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildAmountContainer() {
+  //   return Container(
+  //     width: double.infinity,
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: _containerDecoration(),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         const Text(
+  //           'Total Amount:',
+  //           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+  //         ),
+  //         Text(
+  //           '₹ ${totalAmount.toStringAsFixed(2)}',
+  //           style: const TextStyle(
+  //             fontWeight: FontWeight.bold,
+  //             fontSize: 18,
+  //             color: Colors.green,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   BoxDecoration _containerDecoration() {
     return BoxDecoration(

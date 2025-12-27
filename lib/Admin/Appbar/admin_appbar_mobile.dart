@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../Admin/Colors/Colors.dart';
 
 class AdminAppbarMobile extends StatelessWidget {
@@ -22,6 +23,7 @@ class AdminAppbarMobile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(minWidth: 600),
       height: 100,
       decoration: const BoxDecoration(
         color: CustomColors.customGold,

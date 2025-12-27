@@ -12,7 +12,7 @@ class DoctorServices {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
-    print(response.body);
+
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception('Failed to create testing/scanning: ${response.body}');
     }

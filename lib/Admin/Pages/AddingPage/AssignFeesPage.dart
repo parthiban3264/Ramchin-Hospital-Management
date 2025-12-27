@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/admin_service.dart';
-
 import '../../../Services/fees_service.dart';
 
 class AssignFeesPage extends StatefulWidget {
@@ -16,7 +15,6 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
   final FeesService service = FeesService();
 
   final AdminService doctorService = AdminService();
-  final storage = FlutterSecureStorage();
 
   List<dynamic> feesList = [];
   List<dynamic> doctorList = [];
@@ -29,7 +27,6 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
   bool isDoctorButtonLoading = false;
 
   final List<String> feeTypes = ["REGISTRATION FEE"];
-
 
   @override
   void initState() {
@@ -73,11 +70,9 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
               return 0;
             });
 
-
       isLoading = false;
     });
   }
-
 
   // ---------------------- Create / Edit Fee Modal ---------------------- //
   void openFeeModal({Map<String, dynamic>? fee}) {
@@ -86,7 +81,6 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
     final TextEditingController amountCtrl = TextEditingController(
       text: fee != null ? fee["amount"].toString() : "",
     );
-
 
     isFeeButtonLoading = false;
     isDeleteButtonLoading = false;
@@ -208,8 +202,10 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
                             : () async {
                                 modalSetState(() => isFeeButtonLoading = true);
 
-                                final hospitalId = await storage.read(
-                                  key: 'hospitalId',
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                final hospitalId = prefs.getString(
+                                  'hospitalId',
                                 );
 
                                 final payload = {
@@ -349,123 +345,123 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
             ),
           );
         },
-// =======
-//       builder: (context) => Padding(
-//         padding: EdgeInsets.only(
-//           left: 18,
-//           right: 18,
-//           top: 22,
-//           bottom: MediaQuery.of(context).viewInsets.bottom + 22,
-//         ),
-//         child: Column(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             Text(
-//               fee == null ? "Create Fee" : "Update Fee",
-//               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-//             ),
+        // =======
+        //       builder: (context) => Padding(
+        //         padding: EdgeInsets.only(
+        //           left: 18,
+        //           right: 18,
+        //           top: 22,
+        //           bottom: MediaQuery.of(context).viewInsets.bottom + 22,
+        //         ),
+        //         child: Column(
+        //           mainAxisSize: MainAxisSize.min,
+        //           children: [
+        //             Text(
+        //               fee == null ? "Create Fee" : "Update Fee",
+        //               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        //             ),
 
-//             const SizedBox(height: 18),
+        //             const SizedBox(height: 18),
 
-//             // -------- Dropdown for Fee Type -------- //
-//             DropdownButtonFormField<String>(
-//               value: selectedType,
-//               items: feeTypes
-//                   .map(
-//                     (type) => DropdownMenuItem(value: type, child: Text(type)),
-//                   )
-//                   .toList(),
-//               onChanged: (value) {
-//                 setState(() => selectedType = value!);
-//               },
-//               decoration: InputDecoration(
-//                 labelText: "Fee Type",
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(14),
-//                 ),
-//               ),
-//             ),
+        //             // -------- Dropdown for Fee Type -------- //
+        //             DropdownButtonFormField<String>(
+        //               value: selectedType,
+        //               items: feeTypes
+        //                   .map(
+        //                     (type) => DropdownMenuItem(value: type, child: Text(type)),
+        //                   )
+        //                   .toList(),
+        //               onChanged: (value) {
+        //                 setState(() => selectedType = value!);
+        //               },
+        //               decoration: InputDecoration(
+        //                 labelText: "Fee Type",
+        //                 border: OutlineInputBorder(
+        //                   borderRadius: BorderRadius.circular(14),
+        //                 ),
+        //               ),
+        //             ),
 
-//             const SizedBox(height: 14),
+        //             const SizedBox(height: 14),
 
-//             // -------- Amount -------- //
-//             TextField(
-//               controller: amountCtrl,
-//               keyboardType: TextInputType.number,
-//               decoration: InputDecoration(
-//                 labelText: "Amount",
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(14),
-//                 ),
-//               ),
-//             ),
+        //             // -------- Amount -------- //
+        //             TextField(
+        //               controller: amountCtrl,
+        //               keyboardType: TextInputType.number,
+        //               decoration: InputDecoration(
+        //                 labelText: "Amount",
+        //                 border: OutlineInputBorder(
+        //                   borderRadius: BorderRadius.circular(14),
+        //                 ),
+        //               ),
+        //             ),
 
-//             const SizedBox(height: 18),
+        //             const SizedBox(height: 18),
 
-//             Row(
-//               children: [
-//                 if (fee != null)
-//                   Expanded(
-//                     child: ElevatedButton(
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Colors.red,
-//                         padding: const EdgeInsets.symmetric(vertical: 14),
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(14),
-//                         ),
-//                       ),
-//                       onPressed: () async {
-//                         await service.deleteFee(fee["id"]);
-//                         Navigator.pop(context);
-//                         loadFees();
-//                       },
-//                       child: const Text(
-//                         "Delete",
-//                         style: TextStyle(color: Colors.white),
-//                       ),
-//                     ),
-//                   ),
+        //             Row(
+        //               children: [
+        //                 if (fee != null)
+        //                   Expanded(
+        //                     child: ElevatedButton(
+        //                       style: ElevatedButton.styleFrom(
+        //                         backgroundColor: Colors.red,
+        //                         padding: const EdgeInsets.symmetric(vertical: 14),
+        //                         shape: RoundedRectangleBorder(
+        //                           borderRadius: BorderRadius.circular(14),
+        //                         ),
+        //                       ),
+        //                       onPressed: () async {
+        //                         await service.deleteFee(fee["id"]);
+        //                         Navigator.pop(context);
+        //                         loadFees();
+        //                       },
+        //                       child: const Text(
+        //                         "Delete",
+        //                         style: TextStyle(color: Colors.white),
+        //                       ),
+        //                     ),
+        //                   ),
 
-//                 if (fee != null) const SizedBox(width: 12),
+        //                 if (fee != null) const SizedBox(width: 12),
 
-//                 Expanded(
-//                   child: ElevatedButton(
-//                     style: ElevatedButton.styleFrom(
-//                       backgroundColor: const Color(0xFFBF955E),
-//                       padding: const EdgeInsets.symmetric(vertical: 14),
-//                       shape: RoundedRectangleBorder(
-//                         borderRadius: BorderRadius.circular(14),
-//                       ),
-//                     ),
-//                     onPressed: () async {
-//                       final hospitalId = await storage.read(key: 'hospitalId');
+        //                 Expanded(
+        //                   child: ElevatedButton(
+        //                     style: ElevatedButton.styleFrom(
+        //                       backgroundColor: const Color(0xFFBF955E),
+        //                       padding: const EdgeInsets.symmetric(vertical: 14),
+        //                       shape: RoundedRectangleBorder(
+        //                         borderRadius: BorderRadius.circular(14),
+        //                       ),
+        //                     ),
+        //                     onPressed: () async {
+        //                       final hospitalId = await storage.read(key: 'hospitalId');
 
-//                       final payload = {
-//                         "hospital_Id": hospitalId,
-//                         "type": selectedType,
-//                         "amount": double.tryParse(amountCtrl.text) ?? 0,
-//                       };
+        //                       final payload = {
+        //                         "hospital_Id": hospitalId,
+        //                         "type": selectedType,
+        //                         "amount": double.tryParse(amountCtrl.text) ?? 0,
+        //                       };
 
-//                       if (fee == null) {
-//                         await service.createFee(payload);
-//                       } else {
-//                         await service.updateFee(fee["id"], payload);
-//                       }
+        //                       if (fee == null) {
+        //                         await service.createFee(payload);
+        //                       } else {
+        //                         await service.updateFee(fee["id"], payload);
+        //                       }
 
-//                       Navigator.pop(context);
-//                       loadFees();
-//                     },
-//                     child: Text(
-//                       fee == null ? "Create" : "Update",
-//                       style: const TextStyle(color: Colors.white),
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ),
-// >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
+        //                       Navigator.pop(context);
+        //                       loadFees();
+        //                     },
+        //                     child: Text(
+        //                       fee == null ? "Create" : "Update",
+        //                       style: const TextStyle(color: Colors.white),
+        //                     ),
+        //                   ),
+        //                 ),
+        //               ],
+        //             ),
+        //           ],
+        //         ),
+        // >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
       ),
     );
   }
@@ -524,7 +520,6 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
             )
           : feesList.isEmpty
           ? Center(
-
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
@@ -685,84 +680,84 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
               onPressed: () => openFeeModal(),
             )
           : null,
-// =======
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: const [
-//                   Icon(Icons.currency_rupee, size: 60, color: Colors.grey),
-//                   SizedBox(height: 12),
-//                   Text(
-//                     "No Fees Still Assigned",
-//                     style: TextStyle(
-//                       fontSize: 20,
-//                       fontWeight: FontWeight.w500,
-//                       color: Colors.grey,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             )
-//           : ListView.builder(
-//               padding: const EdgeInsets.all(14),
-//               itemCount: feesList.length,
-//               itemBuilder: (context, index) {
-//                 final fee = feesList[index];
-//                 return Card(
-//                   elevation: 5,
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(20),
-//                   ),
-//                   shadowColor: Colors.black26,
-//                   margin: const EdgeInsets.symmetric(vertical: 10),
-//                   child: ListTile(
-//                     contentPadding: const EdgeInsets.all(20),
-//                     leading: Container(
-//                       padding: const EdgeInsets.all(12),
-//                       decoration: BoxDecoration(
-//                         color: const Color(0xFFBF955E).withOpacity(0.15),
-//                         borderRadius: BorderRadius.circular(14),
-//                       ),
-//                       child: const Icon(
-//                         Icons.currency_rupee,
-//                         color: Color(0xFFBF955E),
-//                         size: 28,
-//                       ),
-//                     ),
-//                     title: Text(
-//                       fee["type"],
-//                       style: const TextStyle(
-//                         fontSize: 18,
-//                         fontWeight: FontWeight.bold,
-//                       ),
-//                     ),
-//                     subtitle: Padding(
-//                       padding: const EdgeInsets.only(top: 6),
-//                       child: Text(
-//                         "Amount: ₹${fee["amount"]}",
-//                         style: const TextStyle(
-//                           fontSize: 16,
-//                           fontWeight: FontWeight.w600,
-//                           color: Colors.black87,
-//                         ),
-//                       ),
-//                     ),
-//                     trailing: const Icon(
-//                       Icons.edit,
-//                       color: Color(0xFFBF955E),
-//                       size: 28,
-//                     ),
-//                     onTap: () => openFeeModal(fee: fee),
-//                   ),
-//                 );
-//               },
-//             ),
+      // =======
+      //               child: Column(
+      //                 mainAxisAlignment: MainAxisAlignment.center,
+      //                 children: const [
+      //                   Icon(Icons.currency_rupee, size: 60, color: Colors.grey),
+      //                   SizedBox(height: 12),
+      //                   Text(
+      //                     "No Fees Still Assigned",
+      //                     style: TextStyle(
+      //                       fontSize: 20,
+      //                       fontWeight: FontWeight.w500,
+      //                       color: Colors.grey,
+      //                     ),
+      //                   ),
+      //                 ],
+      //               ),
+      //             )
+      //           : ListView.builder(
+      //               padding: const EdgeInsets.all(14),
+      //               itemCount: feesList.length,
+      //               itemBuilder: (context, index) {
+      //                 final fee = feesList[index];
+      //                 return Card(
+      //                   elevation: 5,
+      //                   shape: RoundedRectangleBorder(
+      //                     borderRadius: BorderRadius.circular(20),
+      //                   ),
+      //                   shadowColor: Colors.black26,
+      //                   margin: const EdgeInsets.symmetric(vertical: 10),
+      //                   child: ListTile(
+      //                     contentPadding: const EdgeInsets.all(20),
+      //                     leading: Container(
+      //                       padding: const EdgeInsets.all(12),
+      //                       decoration: BoxDecoration(
+      //                         color: const Color(0xFFBF955E).withOpacity(0.15),
+      //                         borderRadius: BorderRadius.circular(14),
+      //                       ),
+      //                       child: const Icon(
+      //                         Icons.currency_rupee,
+      //                         color: Color(0xFFBF955E),
+      //                         size: 28,
+      //                       ),
+      //                     ),
+      //                     title: Text(
+      //                       fee["type"],
+      //                       style: const TextStyle(
+      //                         fontSize: 18,
+      //                         fontWeight: FontWeight.bold,
+      //                       ),
+      //                     ),
+      //                     subtitle: Padding(
+      //                       padding: const EdgeInsets.only(top: 6),
+      //                       child: Text(
+      //                         "Amount: ₹${fee["amount"]}",
+      //                         style: const TextStyle(
+      //                           fontSize: 16,
+      //                           fontWeight: FontWeight.w600,
+      //                           color: Colors.black87,
+      //                         ),
+      //                       ),
+      //                     ),
+      //                     trailing: const Icon(
+      //                       Icons.edit,
+      //                       color: Color(0xFFBF955E),
+      //                       size: 28,
+      //                     ),
+      //                     onTap: () => openFeeModal(fee: fee),
+      //                   ),
+      //                 );
+      //               },
+      //             ),
 
-//       floatingActionButton: FloatingActionButton(
-//         backgroundColor: const Color(0xFFBF955E),
-//         child: const Icon(Icons.add, size: 30, color: Colors.white),
-//         onPressed: () => openFeeModal(),
-//       ),
-// >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
+      //       floatingActionButton: FloatingActionButton(
+      //         backgroundColor: const Color(0xFFBF955E),
+      //         child: const Icon(Icons.add, size: 30, color: Colors.white),
+      //         onPressed: () => openFeeModal(),
+      //       ),
+      // >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
     );
   }
 }

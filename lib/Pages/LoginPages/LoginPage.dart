@@ -234,7 +234,7 @@
 // // //         "createdAt": _dateTime.toString(),
 // // //         "tempCreatedAt": DateTime.now().toUtc().toIso8601String(),
 // // //       };
-// // //       print(_dateTime.toString());
+// // //
 // // //       await patientService.createPatient(patientData);
 // // //
 // // //       final hospitalId = await doctorService.getHospitalId();
@@ -252,7 +252,7 @@
 // // //       ).showSnackBar(SnackBar(content: Text('Patient Register Successfully!')));
 // // //       Navigator.pop(context, true);
 // // //     } catch (e) {
-// // //       print('Error: $e');
+// // //
 // // //       ScaffoldMessenger.of(
 // // //         context,
 // // //       ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -1817,22 +1817,22 @@
 //
 //     // Call API
 //     final doctorData = await AdminService().getMedicalStaff();
-//     print('doctorData $doctorData');
+//
 //     // Example: doctorData is a List
 //     final admin = doctorData.firstWhere(
 //       (e) => e['user_Id'].toString() == storedUserId,
 //       orElse: () => null,
 //     );
-//     print('admin $admin');
+//
 //     if (admin == null) return;
 //
 //     // Extract role / access
 //     final accessAdminRole = admin['accessAdminRole'];
-//     print('accessAdminRole $accessAdminRole');
+//
 //     setState(() {
 //       accessAdmin = accessAdminRole;
 //     });
-//     print('accessAdmin $accessAdmin');
+//
 //     // Store role securely
 //     await storage.write(
 //       key: 'accessAdminRole',
@@ -1966,4 +1966,3 @@
 //     );
 //   }
 // }
-

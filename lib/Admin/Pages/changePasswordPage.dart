@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Pages/NotificationsPage.dart';
 import '../../Services/auth_service.dart';
@@ -17,7 +17,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final TextEditingController oldPasswordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController reNewPasswordController = TextEditingController();
-  final storage = const FlutterSecureStorage();
 
   bool isOldPasswordObscured = true;
   bool isNewPasswordObscured = true;
@@ -49,10 +48,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   Future<void> _loadUserIdFirst() async {
-    final hospitalId = await storage.read(key: 'hospitalId') ?? '';
-    final userId = await storage.read(key: 'userId') ?? '';
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+    final hospitalId = prefs.getString('hospitalId');
 
-    final user = await AuthService().getById(hospitalId, userId);
+    final user = await AuthService().getById(hospitalId!, userId!);
     if (user != null && user['id'] != null) {
       setState(() {
         backendUserId = user['id'];
@@ -164,7 +164,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -206,83 +206,89 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            _buildPasswordField(
-              controller: oldPasswordController,
-              label: "Old Password",
-              isObscured: isOldPasswordObscured,
-              stateColor: _getOldPasswordBorderColor(),
-              focusNode: oldPasswordFocusNode,
-              onToggle: () {
-                setState(() {
-                  isOldPasswordObscured = !isOldPasswordObscured;
-                });
-              },
-              isChecking: isCheckingOldPassword,
-            ),
-            const SizedBox(height: 16),
-            _buildPasswordField(
-              controller: newPasswordController,
-              label: "New Password",
-              isObscured: isNewPasswordObscured,
-              stateColor: _getNewPasswordBorderColor(),
-              focusNode: newPasswordFocusNode,
-              onToggle: () {
-                setState(() {
-                  isNewPasswordObscured = !isNewPasswordObscured;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildPasswordField(
-              controller: reNewPasswordController,
-              label: "Re-enter New Password",
-              isObscured: isReNewPasswordObscured,
-              stateColor: _getRePasswordBorderColor(),
-              focusNode: reNewPasswordFocusNode,
-              onToggle: () {
-                setState(() {
-                  isReNewPasswordObscured = !isReNewPasswordObscured;
-                });
-              },
-            ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 600),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                _buildPasswordField(
+                  controller: oldPasswordController,
+                  label: "Old Password",
+                  isObscured: isOldPasswordObscured,
+                  stateColor: _getOldPasswordBorderColor(),
+                  focusNode: oldPasswordFocusNode,
+                  onToggle: () {
+                    setState(() {
+                      isOldPasswordObscured = !isOldPasswordObscured;
+                    });
+                  },
+                  isChecking: isCheckingOldPassword,
+                ),
+                const SizedBox(height: 16),
+                _buildPasswordField(
+                  controller: newPasswordController,
+                  label: "New Password",
+                  isObscured: isNewPasswordObscured,
+                  stateColor: _getNewPasswordBorderColor(),
+                  focusNode: newPasswordFocusNode,
+                  onToggle: () {
+                    setState(() {
+                      isNewPasswordObscured = !isNewPasswordObscured;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPasswordField(
+                  controller: reNewPasswordController,
+                  label: "Re-enter New Password",
+                  isObscured: isReNewPasswordObscured,
+                  stateColor: _getRePasswordBorderColor(),
+                  focusNode: reNewPasswordFocusNode,
+                  onToggle: () {
+                    setState(() {
+                      isReNewPasswordObscured = !isReNewPasswordObscured;
+                    });
+                  },
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: isLoading ? null : _changePassword,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            "Change Password",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
-                onPressed: isLoading ? null : _changePassword,
-                child: isLoading
-                    ? const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
-                        "Change Password",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

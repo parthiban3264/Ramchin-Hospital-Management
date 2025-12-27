@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../../../Services/admin_service.dart';
+
 import '../../../Services/Button_Service.dart';
-import 'package:http/http.dart' as http;
+import '../../../Services/admin_service.dart';
 
 // ------------------- MAIN SCREEN -------------------
 class AssignRoleButton extends StatefulWidget {
@@ -41,7 +40,7 @@ class _AssignRoleButtonState extends State<AssignRoleButton> {
         final role = (user["role"] ?? "").toString().toLowerCase() == "doctor";
         return role;
       }).toList();
-      print('filteredDoctor $filteredDoctor');
+
       // ✅ Assign permissions ID list for each staff
       for (var user in filteredStaff) {
         final List<dynamic> permList = user["permissions"] ?? [];
@@ -60,7 +59,6 @@ class _AssignRoleButtonState extends State<AssignRoleButton> {
         loading = false;
       });
     } catch (e) {
-      print("❌ Error loading data: $e");
       setState(() => loading = false);
     }
   }
@@ -404,20 +402,17 @@ class _StaffPermissionTileState extends State<StaffPermissionTile>
     setState(() => selectedDoctorId = doctorId.isEmpty ? null : doctorId);
 
     try {
-      print('selectedDoctorId $selectedDoctorId');
-      print('widget.id ${widget.id}');
       await AdminService().updateAdminAmount(widget.id, {
         "assignDoctorId": doctorId.isEmpty ? null : doctorId,
       });
     } catch (e) {
-      print('error $e');
       setState(() => selectedDoctorId = null);
     }
   }
 
   Future<void> updateDoctorAccess(bool value) async {
     setState(() => accessDoctorRole = value);
-    print('accessDoctorRole $accessDoctorRole');
+
     try {
       await AdminService().updateAdminAmount(widget.id, {
         "accessDoctorRole": value,

@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../Pages/DrawerPages/Consulate/ConsultationPage.dart';
-import '../Admin/Pages/changePasswordPage.dart';
-import '../Mediacl_Staff/Pages/Medical/MedicalQueuePage.dart';
-import '../Mediacl_Staff/Pages/OutPatient/Queue/FeesQueuePage.dart';
-import '../Mediacl_Staff/Pages/OutPatient/Queue/OpQueuePage.dart';
-import '../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
-import '../Mediacl_Staff/Pages/Overview/Overviewpage.dart';
-import '../Mediacl_Staff/Pages/OutPatient/PatientRegistrationPage.dart';
-import '../../../Pages/DrawerPages/ReceptionDeskPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../Admin/Colors/Colors.dart';
 import '../Admin/Pages/AdminEditProfilePage.dart';
 import '../Admin/Pages/AdminProfilePage.dart';
-import '../Pages/DrawerPages/Consulate/ReceptionDeskQueue.dart';
-import '../Pages/DrawerPages/Consulate/doctor_consultation_page.dart';
-import '../Pages/DrawerPages/Medi&InjecQueuePage.dart';
-import '../Pages/DrawerPages/TreatmentQueuePage.dart';
+import '../Admin/Pages/changePasswordPage.dart';
 import '../Pages/NotificationsPage.dart';
-import '../Pages/UserIdCheckPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
 
@@ -225,9 +213,10 @@ class AdminMobileDrawer extends StatelessWidget {
               ),
               onTap: () async {
                 try {
-                  const secureStorage = FlutterSecureStorage();
+                  final prefs = await SharedPreferences.getInstance();
+
                   await AuthService().logout(); // logout API call
-                  await secureStorage.deleteAll(); // clear all local storage
+                  await prefs.clear(); // clear all local storage
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(

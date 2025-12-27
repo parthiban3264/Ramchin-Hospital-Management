@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
-import 'package:printing/printing.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ScanReportCard extends StatefulWidget {
   final Map<String, dynamic> scanData;
@@ -23,7 +23,6 @@ class ScanReportCard extends StatefulWidget {
 }
 
 class _ScanReportCardState extends State<ScanReportCard> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   String? hospitalName;
 
   @override
@@ -33,14 +32,14 @@ class _ScanReportCardState extends State<ScanReportCard> {
   }
 
   void loadHospitalName() async {
-    hospitalName = await secureStorage.read(key: 'hospitalName');
+    final prefs = await SharedPreferences.getInstance();
+    hospitalName = prefs.getString('hospitalName');
     setState(() {}); // update UI
   }
 
   @override
   Widget build(BuildContext context) {
     final patient = widget.scanData["Patient"];
-    print('patientss $patient');
 
     // Pick first non-test item (like a scan)
     // final testDetails =
@@ -140,10 +139,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
               seen.add(key);
               options.add(Map<String, dynamic>.from(opt));
             }
-          } else {
-            // debug: uncomment to log skipped entries
-            // print('SKIP options entry (invalid selectedOption): ${opt}');
-          }
+          } else {}
         }
       }
 
@@ -159,10 +155,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
               seen.add(key);
               options.add(Map<String, dynamic>.from(opt));
             }
-          } else {
-            // debug: uncomment to log skipped entries
-            // print('SKIP selectedOptions entry (invalid selectedOption): ${opt}');
-          }
+          } else {}
         }
       }
     }
@@ -370,7 +363,6 @@ class _ScanReportCardState extends State<ScanReportCard> {
       }
     }
 
-    print('patient$patient');
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 4, bottom: 15),
@@ -505,33 +497,33 @@ class _ScanReportCardState extends State<ScanReportCard> {
     );
   }
 
-  Widget _buildInfoCard(List<List<String>> data) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 4)],
-      ),
-      child: Column(
-        children: data.map((row) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  row[0],
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Flexible(child: Text(row[1], textAlign: TextAlign.right)),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+  // Widget _buildInfoCard(List<List<String>> data) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(10),
+  //       boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 4)],
+  //     ),
+  //     child: Column(
+  //       children: data.map((row) {
+  //         return Padding(
+  //           padding: const EdgeInsets.symmetric(vertical: 6),
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //             children: [
+  //               Text(
+  //                 row[0],
+  //                 style: const TextStyle(fontWeight: FontWeight.bold),
+  //               ),
+  //               Flexible(child: Text(row[1], textAlign: TextAlign.right)),
+  //             ],
+  //           ),
+  //         );
+  //       }).toList(),
+  //     ),
+  //   );
+  // }
 
   // Widget _buildResultTable(List<Map<String, dynamic>> options) {
   //   final filteredOptions = options.where((e) {

@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Doctor/doctor_service.dart';
 import '../../../Services/consultation_service.dart';
-import '../../../Services/fees_Service.dart';
 import '../../../Services/patient_service.dart';
 import '../../../Services/payment_service.dart';
 import '../../../Widgets/AgeDobField.dart';
-import '../../../Pages/NotificationsPage.dart';
 
 const Color customGold = Color(0xFFBF955E);
 const Color backgroundColor = Color(0xFFF9F7F2);
@@ -78,7 +78,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final doctorService = DoctorService();
   final consultationService = ConsultationService();
   final paymentService = PaymentService();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController AccompanierNameController =
@@ -228,7 +227,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   //         _showSnackBar('New patient registration');
   //       }
   //
-  //       print('✅ Patient fetched: $fetched');
+  //
   //
   //       // ✅ Check if the patient already has ongoing consultation(s)
   //       final consultations = fetched['Consultation'] as List<dynamic>? ?? [];
@@ -311,7 +310,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   //       _showSnackBar('New patient registration.');
   //     }
   //   } catch (e) {
-  //     print('❌ Error fetching patient: $e');
+  //
   //     _showSnackBar('Error: $e');
   //   } finally {
   //     if (mounted) setState(() => isCheckingUser = false);
@@ -355,7 +354,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   //     _showSnackBar('Patient found. Select patient or add new.');
   //   } catch (e) {
   //     // 🔹 IMPORTANT: treat error as NEW PATIENT
-  //     print('ℹ️ No patient found for this number');
   //
   //     _prepareNewPatient(userId);
   //   } finally {
@@ -380,95 +378,94 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       final List<Map<String, dynamic>> patients = await patientService
           .getPatientsByUserId(userId);
 
-
       if (patients.isEmpty) {
         _prepareNewPatient(userId);
         return;
-// =======
-//       if (exists == true) {
-//         final fetched = await patientService.getPatientById(userId);
-//         print('✅ Patient fetched: $fetched');
+        // =======
+        //       if (exists == true) {
+        //         final fetched = await patientService.getPatientById(userId);
+        //
 
-//         // ✅ Check if the patient already has ongoing consultation(s)
-//         final consultations = fetched['Consultation'] as List<dynamic>? ?? [];
-//         final hasOngoing = consultations.any((c) {
-//           final status = c['status']?.toString().toUpperCase() ?? '';
-//           return status != 'COMPLETED';
-//         });
+        //         // ✅ Check if the patient already has ongoing consultation(s)
+        //         final consultations = fetched['Consultation'] as List<dynamic>? ?? [];
+        //         final hasOngoing = consultations.any((c) {
+        //           final status = c['status']?.toString().toUpperCase() ?? '';
+        //           return status != 'COMPLETED';
+        //         });
 
-//         if (hasOngoing) {
-//           // 🚫 Patient already has an active consultation
-//           setState(() {
-//             isExistingUser = true;
-//             existingPatient = fetched;
-//           });
+        //         if (hasOngoing) {
+        //           // 🚫 Patient already has an active consultation
+        //           setState(() {
+        //             isExistingUser = true;
+        //             existingPatient = fetched;
+        //           });
 
-//           _showSnackBar(
-//             'Your consultation is already ongoing. Please complete it before creating a new one.',
-//           );
-//           return; // Stop here — don’t populate form further or allow submit
-//         }
+        //           _showSnackBar(
+        //             'Your consultation is already ongoing. Please complete it before creating a new one.',
+        //           );
+        //           return; // Stop here — don’t populate form further or allow submit
+        //         }
 
-//         // ✅ No active consultations — safe to continue
-//         setState(() {
-//           isExistingUser = true;
-//           existingPatient = fetched;
+        //         // ✅ No active consultations — safe to continue
+        //         setState(() {
+        //           isExistingUser = true;
+        //           existingPatient = fetched;
 
-//           _ignorePhoneListener = true; // 🚫 stop triggering listener
-//           phoneController.text = '+91 ${fetched['user_Id']}';
-//           _ignorePhoneListener = false; // ✅ re-enable it
+        //           _ignorePhoneListener = true; // 🚫 stop triggering listener
+        //           phoneController.text = '+91 ${fetched['user_Id']}';
+        //           _ignorePhoneListener = false; // ✅ re-enable it
 
-//           fullNameController.text = fetched['name'] ?? '';
-//           AddressController.text =
-//               fetched['address']?['Address'] ?? fetched['address'] ?? '';
-//           dobController.text = fetched['dob'] != null
-//               ? DateFormat(
-//                   'yyyy-MM-dd',
-//                 ).format(DateTime.parse(fetched['dob']).toLocal())
-//               : '';
-//           selectedGender = fetched['gender'];
-//           selectedBloodType = fetched['bldGrp'];
-//           emailController.text = fetched['email']?['personal'] ?? '';
-//           guardianEmailController.text = fetched['email']?['guardian'] ?? '';
+        //           fullNameController.text = fetched['name'] ?? '';
+        //           AddressController.text =
+        //               fetched['address']?['Address'] ?? fetched['address'] ?? '';
+        //           dobController.text = fetched['dob'] != null
+        //               ? DateFormat(
+        //                   'yyyy-MM-dd',
+        //                 ).format(DateTime.parse(fetched['dob']).toLocal())
+        //               : '';
+        //           selectedGender = fetched['gender'];
+        //           selectedBloodType = fetched['bldGrp'];
+        //           emailController.text = fetched['email']?['personal'] ?? '';
+        //           guardianEmailController.text = fetched['email']?['guardian'] ?? '';
 
-//           // Compute age
-//           if (fetched['dob'] != null) {
-//             final dob = DateTime.parse(fetched['dob']);
-//             final today = DateTime.now();
-//             final age =
-//                 today.year -
-//                 dob.year -
-//                 ((today.month < dob.month ||
-//                         (today.month == dob.month && today.day < dob.day))
-//                     ? 1
-//                     : 0);
-//             ageController.text = age.toString();
-//           }
-//         });
+        //           // Compute age
+        //           if (fetched['dob'] != null) {
+        //             final dob = DateTime.parse(fetched['dob']);
+        //             final today = DateTime.now();
+        //             final age =
+        //                 today.year -
+        //                 dob.year -
+        //                 ((today.month < dob.month ||
+        //                         (today.month == dob.month && today.day < dob.day))
+        //                     ? 1
+        //                     : 0);
+        //             ageController.text = age.toString();
+        //           }
+        //         });
 
-//         _showSnackBar('Existing patient found.');
-//       } else {
-//         // 🆕 New patient registration
-//         setState(() {
-//           isExistingUser = false;
-//           existingPatient = null;
+        //         _showSnackBar('Existing patient found.');
+        //       } else {
+        //         // 🆕 New patient registration
+        //         setState(() {
+        //           isExistingUser = false;
+        //           existingPatient = null;
 
-//           fullNameController.clear();
-//           AddressController.clear();
-//           dobController.clear();
-//           emailController.clear();
-//           guardianEmailController.clear();
-//           ageController.clear();
-//           selectedGender = null;
-//           selectedBloodType = null;
+        //           fullNameController.clear();
+        //           AddressController.clear();
+        //           dobController.clear();
+        //           emailController.clear();
+        //           guardianEmailController.clear();
+        //           ageController.clear();
+        //           selectedGender = null;
+        //           selectedBloodType = null;
 
-//           _ignorePhoneListener = true;
-//           phoneController.text = '+91 $userId';
-//           _ignorePhoneListener = false;
-//         });
+        //           _ignorePhoneListener = true;
+        //           phoneController.text = '+91 $userId';
+        //           _ignorePhoneListener = false;
+        //         });
 
-//         _showSnackBar('New patient registration.');
-// >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
+        //         _showSnackBar('New patient registration.');
+        // >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
       }
 
       if (patients.isEmpty) {
@@ -485,7 +482,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
 
       _showSnackBar('Patients found. Select a patient or add new.');
     } catch (e) {
-      print('ℹ️ No patient found for this number');
       _prepareNewPatient(userId);
     } finally {
       if (mounted) setState(() => isCheckingUser = false);
@@ -580,7 +576,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     setState(() => isLoadingDoctors = true);
     try {
       final docs = await doctorService.getDoctors();
-      print('doctor $docs');
+
       // 🔹 Filter Active doctors only
       final activeDoctors = docs
           .where((doc) => doc['status'] == 'ACTIVE')
@@ -636,20 +632,20 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     setState(() => isSubmitting = true);
     try {
       // normalize phone to userId
-      final cleanedMobile = phoneController.text.trim().replaceAll(
-        RegExp(r'^\+?91[\s-]*'),
-        '',
-      );
-      final userId = cleanedMobile;
+      // final cleanedMobile = phoneController.text.trim().replaceAll(
+      //   RegExp(r'^\+?91[\s-]*'),
+      //   '',
+      // );
+      // final userId = cleanedMobile;
 
       // Build patient data object
       DateTime dob =
           DateTime.tryParse(dobController.text) ?? DateTime(1990, 1, 1);
-
+      final prefs = await SharedPreferences.getInstance();
       final patientData = {
         "name": fullNameController.text.trim(),
         "ac_name": AccompanierNameController.text.trim(),
-        "staff_Id": await secureStorage.read(key: 'userId'),
+        "staff_Id": prefs.getString('userId'),
         "phone": {
           "mobile": phoneController.text.trim(),
           "emergency": emergencyController.text.trim(),
@@ -675,7 +671,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
             existingPatient?['Consultation'] as List<dynamic>? ?? [];
 
         final hasOngoing = consultations.any((c) {
-
           final status = c['status']?.toString().toUpperCase() ?? '';
 
           // not completed or endprocessed means it's still active
@@ -692,12 +687,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
 
         // ✅ Step 2: Proceed normally if no ongoing consultations exist
         try {
-
           await patientService.updatePatient(
             selectedPatientId.toString(),
             patientData,
           );
-
         } catch (e) {
           _showSnackBar('Failed to update patient: $e');
         }
@@ -705,7 +698,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
         final hospitalId = await doctorService.getHospitalId();
 
         final result = await consultationService.createConsultation({
-
           "hospital_Id": hospitalId,
           "patient_Id": selectedPatientId,
           "doctor_Id": doctorIdController.text,
@@ -729,18 +721,17 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       } else {
         // New user: create patient then create consultation
         final results = await patientService.createPatient(patientData);
-        print('result $results');
+
         if (results['status'] == 'failed') {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(results['message'])));
           return;
         }
-        print('work');
+
         final PatientId = await results['data']['patient']['id'];
         //
-        print('PatientId $PatientId');
-        print('selectedPatientId $selectedPatientId');
+
         final hospitalId = await doctorService.getHospitalId();
         final result = await consultationService.createConsultation({
           "hospital_Id": hospitalId,
@@ -763,7 +754,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
         Navigator.pop(context, true);
       }
     } catch (e) {
-      print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Register Failed, set Register fees')),
       );
@@ -795,7 +785,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.08),
+                        color: Colors.grey.withValues(alpha: 0.08),
                         blurRadius: 12,
                         offset: const Offset(2, 6),
                       ),
@@ -925,7 +915,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.lightBlue.shade100
-                                            .withOpacity(0.4),
+                                            .withValues(alpha: 0.4),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -1046,7 +1036,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                                     ),
                                   ),
                                 );
-                              }).toList(),
+                              }),
 
                               const SizedBox(height: 20),
 
@@ -1332,7 +1322,9 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
               margin: const EdgeInsets.all(8),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected ? customGold.withOpacity(0.25) : Colors.white,
+                color: isSelected
+                    ? customGold.withValues(alpha: 0.25)
+                    : Colors.white,
                 border: Border.all(
                   color: isSelected ? customGold : Colors.grey.shade300,
                   width: isSelected ? 2 : 1,
@@ -1340,7 +1332,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(1, 2),
                   ),
@@ -1372,62 +1364,62 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     );
   }
 
-  Widget _buildDatePickerField(
-    BuildContext context,
-    String label,
-    TextEditingController controller,
-  ) {
-    return SizedBox(
-      width: 320,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          GestureDetector(
-            onTap: () async {
-              DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime(1990),
-                firstDate: DateTime(1900),
-                lastDate: DateTime.now(),
-              );
-              if (pickedDate != null) {
-                controller.text =
-                    "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
-              }
-            },
-            child: AbsorbPointer(
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: "YYYY-MM-DD",
-                  suffixIcon: const Icon(Icons.calendar_today, size: 20),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                    borderSide: BorderSide(color: customGold, width: 1.5),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildDatePickerField(
+  //   BuildContext context,
+  //   String label,
+  //   TextEditingController controller,
+  // ) {
+  //   return SizedBox(
+  //     width: 320,
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           label,
+  //           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+  //         ),
+  //         const SizedBox(height: 6),
+  //         GestureDetector(
+  //           onTap: () async {
+  //             DateTime? pickedDate = await showDatePicker(
+  //               context: context,
+  //               initialDate: DateTime(1990),
+  //               firstDate: DateTime(1900),
+  //               lastDate: DateTime.now(),
+  //             );
+  //             if (pickedDate != null) {
+  //               controller.text =
+  //                   "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+  //             }
+  //           },
+  //           child: AbsorbPointer(
+  //             child: TextField(
+  //               controller: controller,
+  //               decoration: InputDecoration(
+  //                 hintText: "YYYY-MM-DD",
+  //                 suffixIcon: const Icon(Icons.calendar_today, size: 20),
+  //                 filled: true,
+  //                 fillColor: Colors.grey[50],
+  //                 contentPadding: const EdgeInsets.symmetric(
+  //                   horizontal: 12,
+  //                   vertical: 12,
+  //                 ),
+  //                 enabledBorder: OutlineInputBorder(
+  //                   borderRadius: BorderRadius.circular(8),
+  //                   borderSide: BorderSide(color: Colors.grey.shade300),
+  //                 ),
+  //                 focusedBorder: OutlineInputBorder(
+  //                   borderRadius: BorderRadius.all(Radius.circular(8)),
+  //                   borderSide: BorderSide(color: customGold, width: 1.5),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildSelectionCard({
     required String label,
@@ -1526,37 +1518,37 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   );
 }
 
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-
-  const _InfoChip({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: Colors.grey.shade700),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// class _InfoChip extends StatelessWidget {
+//   final String label;
+//   final IconData icon;
+//
+//   const _InfoChip({required this.label, required this.icon});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+//       decoration: BoxDecoration(
+//         color: Colors.grey.shade100,
+//         borderRadius: BorderRadius.circular(20),
+//       ),
+//       child: Row(
+//         children: [
+//           Icon(icon, size: 14, color: Colors.grey.shade700),
+//           const SizedBox(width: 4),
+//           Text(
+//             label,
+//             style: TextStyle(
+//               fontSize: 12,
+//               color: Colors.grey.shade700,
+//               fontWeight: FontWeight.w500,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override

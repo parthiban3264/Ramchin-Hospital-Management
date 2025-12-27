@@ -17,10 +17,6 @@ class PdfBillService {
     required List<dynamic> tonics,
     required List<dynamic> injections,
   }) async {
-    print('medicines $medicines');
-    print('tonics $tonics');
-    print('injections $injections');
-
     final hospital = allConsultation['Hospital'] ?? {};
     final patient = allConsultation['Patient'] ?? {};
 

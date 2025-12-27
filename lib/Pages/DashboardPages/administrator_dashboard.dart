@@ -3,8 +3,6 @@ import 'package:hospitrax/Pages/NotificationsPage.dart';
 
 import '../../Admin/Appbar/admin_appbar_desktop.dart';
 import '../../Admin/Appbar/admin_appbar_mobile.dart';
-import '../../Admin/Pages/AdminDashboardPage.dart';
-import '../../Admin/Pages/AdminOverviewPage.dart';
 import '../../Administrator/Administartor_Home.dart';
 import '../../Administrator/Administrator_Manage.dart';
 import '../../Drawer/AdminDrawer.dart';
@@ -33,7 +31,6 @@ class _AdministratorDashboardPageState
 
   @override
   Widget build(BuildContext context) {
-    print(widget.hospitalData);
     double screenWidth = MediaQuery.sizeOf(context).width;
     bool isMobile = screenWidth < 600;
     bool isSmallDesktop = screenWidth >= 600 && screenWidth < 800;

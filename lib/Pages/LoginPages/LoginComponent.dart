@@ -1297,7 +1297,7 @@
 // //         "paymentMode": "Online",
 // //       });
 // //       final userId = patientData['user_Id'];
-// //       print(userId);
+// //
 // //       final patientUpdate = await patientService.updatePatient(userId, {
 // //         "height": int.parse(heightController.text),
 // //         "weight": int.parse(weightController.text),
@@ -1929,7 +1929,7 @@
 //         final role = (user["role"] ?? "").toString().toLowerCase() == "doctor";
 //         return role;
 //       }).toList();
-//       print('filteredDoctor $filteredDoctor');
+//
 //       // ✅ Assign permissions ID list for each staff
 //       for (var user in filteredStaff) {
 //         final List<dynamic> permList = user["permissions"] ?? [];
@@ -1948,7 +1948,7 @@
 //         loading = false;
 //       });
 //     } catch (e) {
-//       print("❌ Error loading data: $e");
+//
 //       setState(() => loading = false);
 //     }
 //   }
@@ -2281,20 +2281,19 @@
 //     setState(() => selectedDoctorId = doctorId.isEmpty ? null : doctorId);
 //
 //     try {
-//       print('selectedDoctorId $selectedDoctorId');
-//       print('widget.id ${widget.id}');
+//
 //       await AdminService().updateAdminAmount(widget.id, {
 //         "assignDoctorId": doctorId.isEmpty ? null : doctorId,
 //       });
 //     } catch (e) {
-//       print('error $e');
+//
 //       setState(() => selectedDoctorId = null);
 //     }
 //   }
 //
 //   Future<void> updateDoctorAccess(bool value) async {
 //     setState(() => accessDoctorRole = value);
-//     print('accessDoctorRole $accessDoctorRole');
+//
 //     try {
 //       await AdminService().updateAdminAmount(widget.id, {
 //         "accessDoctorRole": value,

@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
-
-final storage = FlutterSecureStorage();
 
 class AdminService {
   Future<Map<String, dynamic>?> getProfile() async {
     try {
-      // Get userId from secure storage
-      final userId = await storage.read(key: 'userId');
-      final hospitalId = await storage.read(key: 'hospitalId');
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
+      final userId = prefs.getString('userId');
 
       if (userId == null || hospitalId == null) return null;
 
@@ -20,7 +19,7 @@ class AdminService {
         Uri.parse('$baseUrl/admins/getByUser/$hospitalId/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
-      print(response.body);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['data']; // Assuming API returns { data: {...} }
@@ -34,17 +33,19 @@ class AdminService {
 
   Future<Map<String, dynamic>?> getLabProfile(String userId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+
       // Get userId from secure storage
       //final userId = await storage.read(key: 'userId');
-      final hospitalId = await storage.read(key: 'hospitalId');
+      final hospitalId = prefs.getString('hospitalId');
 
-      if (userId == null || hospitalId == null) return null;
+      if (hospitalId == null) return null;
 
       final response = await http.get(
         Uri.parse('$baseUrl/admins/getByUser/$hospitalId/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
-      print(response.body);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['data']; // Assuming API returns { data: {...} }
@@ -58,17 +59,19 @@ class AdminService {
 
   Future<Map<String, dynamic>?> getProfileAssignDr(String userId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+
       // Get userId from secure storage
       //final userId = await storage.read(key: 'userId');
-      final hospitalId = await storage.read(key: 'hospitalId');
+      final hospitalId = prefs.getString('hospitalId');
 
-      if (userId == null || hospitalId == null) return null;
+      if (hospitalId == null) return null;
 
       final response = await http.get(
         Uri.parse('$baseUrl/admins/getByUser/$hospitalId/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
-      print(response.body);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['data']; // Assuming API returns { data: {...} }
@@ -84,8 +87,10 @@ class AdminService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final userId = await storage.read(key: 'userId');
-      final hospitalId = await storage.read(key: 'hospitalId');
+      final prefs = await SharedPreferences.getInstance();
+
+      final userId = prefs.getString('userId');
+      final hospitalId = prefs.getString('hospitalId');
 
       if (userId == null || hospitalId == null) {
         throw Exception("User ID or Hospital ID not found in secure storage");
@@ -98,7 +103,7 @@ class AdminService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
 
@@ -113,15 +118,14 @@ class AdminService {
         );
       }
     } catch (e) {
-      print("Error updating admin profile: $e");
       return {"status": "failed", "message": e.toString()};
     }
   }
 
-
   Future<String> uploadProfileImage(File imageFile) async {
-    final userId = await storage.read(key: 'userId');
-    final hospitalId = await storage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+    final hospitalId = prefs.getString('hospitalId');
 
     final uri = Uri.parse(
       '$baseUrl/admins/updateProfilePhoto/$hospitalId/$userId',
@@ -196,7 +200,6 @@ class AdminService {
   //   }
   // }
 
-
   Future<Map<String, dynamic>> createAdmin(Map<String, dynamic> data) async {
     final url = Uri.parse(
       '$baseUrl/admins/create',
@@ -208,7 +211,7 @@ class AdminService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         // Created successfully
         return jsonDecode(response.body);
@@ -236,10 +239,10 @@ class AdminService {
   //   }
   // }
 
-
   /// 🔍 Check if User ID already exists for a hospital
   Future<bool> checkUserIdExists({required String userId}) async {
-    final hospitalId = await storage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     final uri = Uri.parse('$baseUrl/admins/check-user-id/$hospitalId/$userId');
 
     final response = await http.get(uri);
@@ -253,7 +256,9 @@ class AdminService {
   }
 
   Future<List<dynamic>> getMedicalStaff() async {
-    final hospitalId = await storage.read(key: "hospitalId");
+    final prefs = await SharedPreferences.getInstance();
+
+    final hospitalId = prefs.getString("hospitalId");
     final url = Uri.parse("$baseUrl/admins/all/$hospitalId");
 
     final response = await http.get(url);
@@ -276,7 +281,6 @@ class AdminService {
 
     throw Exception("Failed to load admins");
   }
-
 
   Future<Map<String, dynamic>> updateAdminAmount(
     int id,

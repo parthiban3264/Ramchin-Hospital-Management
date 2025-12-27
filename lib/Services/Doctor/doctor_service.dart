@@ -22,10 +22,10 @@
 //
 //       // 👇 Use your backend route correctly
 //       final url = Uri.parse('$baseUrl/admins/all/$hospitalId/Doctor');
-//       print('Fetching doctors from: $url');
+//
 //
 //       final response = await http.get(url);
-//       print('Doctor API Response: ${response.body}');
+//
 //
 //       if (response.statusCode == 200) {
 //         final data = jsonDecode(response.body);
@@ -47,30 +47,32 @@
 //             };
 //           }).toList();
 //         } else {
-//           print('Unexpected data format: ${data}');
+//
 //         }
 //       } else {
-//         print('Failed to fetch doctors: ${response.statusCode}');
+//
 //       }
 //
 //       return [];
 //     } catch (e) {
-//       print("Error fetching doctors: $e");
+//
 //       return [];
 //     }
 //   }
 // }
 
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../utils/utils.dart';
 
 class DoctorService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -81,17 +83,14 @@ class DoctorService {
     try {
       final hospitalId = await getHospitalId();
       final url = Uri.parse('$baseUrl/admins/all/$hospitalId/DOCTOR');
-      print('📡 Fetching doctors from: $url');
 
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
-        print('❌ Error: ${response.statusCode}');
         return [];
       }
 
       final decoded = jsonDecode(response.body);
-      print('✅ Raw response: $decoded');
 
       // ✅ Backend returns List directly, not {"status":..., "data":...}
       if (decoded is List) {
@@ -114,12 +113,9 @@ class DoctorService {
             .where((d) => d.isNotEmpty)
             .toList();
       } else {
-        print("⚠️ Unexpected response type: ${decoded.runtimeType}");
         return [];
       }
     } catch (e, stack) {
-      print('❌ Error fetching doctors: $e');
-      print(stack);
       return [];
     }
   }
@@ -128,17 +124,14 @@ class DoctorService {
     try {
       final hospitalId = await getHospitalId();
       final url = Uri.parse('$baseUrl/admins/all/$hospitalId/Nurse');
-      print('📡 Fetching doctors from: $url');
 
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
-        print('❌ Error: ${response.statusCode}');
         return [];
       }
 
       final decoded = jsonDecode(response.body);
-      print('✅ Raw response: $decoded');
 
       // ✅ Backend returns List directly, not {"status":..., "data":...}
       if (decoded is List) {
@@ -160,12 +153,9 @@ class DoctorService {
             .where((d) => d.isNotEmpty)
             .toList();
       } else {
-        print("⚠️ Unexpected response type: ${decoded.runtimeType}");
         return [];
       }
     } catch (e, stack) {
-      print('❌ Error fetching doctors: $e');
-      print(stack);
       return [];
     }
   }

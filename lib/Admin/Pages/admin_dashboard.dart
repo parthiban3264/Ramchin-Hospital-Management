@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../Drawer/AdminDrawer.dart';
-import '../Appbar/admin_appbar_desktop.dart';
 import '../Appbar/admin_appbar_mobile.dart';
 import 'AddingPage.dart';
 import 'AdminDashboardPage.dart';
@@ -30,19 +29,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size(screenWidth, 100),
-          child: isMobile
-              ? AdminAppbarMobile(
-                  title: 'Admin Dashboard',
-                  isBackEnable: false,
-                  isNotificationEnable: false,
-                  isDrawerEnable: true,
-                )
-              : AdminAppbarDesktop(
-                  title: 'Patient Dashboard',
-                  isBackEnable: false,
-                  isNotificationEnable: true,
-                  isDrawerEnable: true,
-                ),
+          child: AdminAppbarMobile(
+            title: 'Admin Dashboard',
+            isBackEnable: false,
+            isNotificationEnable: false,
+            isDrawerEnable: true,
+          ),
         ),
         drawer: AdminMobileDrawer(
           title: 'Menu',
@@ -58,7 +50,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             AdminOpDashboardPage(),
             AdminOverviewPage(),
 
-
             AdminAddingPage(),
           ],
         ),
@@ -73,7 +64,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             });
           },
           items: [
-
             BottomNavigationBarItem(
               icon: Icon(Icons.miscellaneous_services),
               label: 'Service',
@@ -83,7 +73,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               icon: Icon(Icons.manage_accounts),
               label: 'Manage',
             ),
-
           ],
         ),
       ),

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hospitrax/Admin/Pages/AddingPage/Tonic/TonicPage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Admin/Pages/AddingPage/InjectionAddPage.dart';
 import '../../../Admin/Pages/AddingPage/Medicine/MedicinePage.dart';
 import '../../../Services/admin_service.dart';
 import '../Medical/MedicalQueuePage.dart';
-import '../OutPatient/Queue/FeesQueuePage.dart';
 
 class MedicalDashboardPage extends StatefulWidget {
   const MedicalDashboardPage({super.key});
@@ -17,8 +16,6 @@ class MedicalDashboardPage extends StatefulWidget {
 }
 
 class _MedicalDashboardPageState extends State<MedicalDashboardPage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   String? hospitalName;
   String? hospitalPlace;
   String? hospitalPhoto;
@@ -33,17 +30,14 @@ class _MedicalDashboardPageState extends State<MedicalDashboardPage> {
   }
 
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      hospitalName = name ?? "Unknown Hospital";
-      hospitalPlace = place ?? "Unknown Place";
-      hospitalPhoto =
-          photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
-    });
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+    setState(() {});
   }
 
   Future<void> _loadMedicalData() async {
@@ -53,8 +47,6 @@ class _MedicalDashboardPageState extends State<MedicalDashboardPage> {
     setState(() {
       medicalPermissionIds = perms.map<int>((e) => e as int).toList();
     });
-
-    print("Cashier Permissions Loaded: $medicalPermissionIds");
   }
 
   Future<void> _refreshPage() async {

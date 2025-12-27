@@ -339,8 +339,20 @@
 // }
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// lidator: (val) {
+//         if (label.contains("*") && (val == null || val.isEmpty)) {
+//           return "Required field";
+//         }
+//         return null;
+//       },
+//     );
+//   }
+// }
+
+
 import '../../../../Services/Medicine_Service.dart';
 
 class AddMedicianPage extends StatefulWidget {
@@ -352,7 +364,6 @@ class AddMedicianPage extends StatefulWidget {
 
 class _AddMedicianPageState extends State<AddMedicianPage> {
   final _formKey = GlobalKey<FormState>();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   final TextEditingController medicianNameController = TextEditingController();
   final TextEditingController medicianCodeController = TextEditingController();
@@ -403,8 +414,8 @@ class _AddMedicianPageState extends State<AddMedicianPage> {
     setState(() => _isLoading = true);
 
     try {
-      final hospitalId = await secureStorage.read(key: 'hospitalId');
-
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
       await MedicineService().createMedician({
         "hospital_Id": int.parse(hospitalId!),
         "medicianName": medicianNameController.text,
