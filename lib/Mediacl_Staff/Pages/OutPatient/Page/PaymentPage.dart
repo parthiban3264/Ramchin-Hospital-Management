@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -634,20 +633,35 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     final ttfBold = await PdfGoogleFonts.notoSansBold();
     final pdf = pw.Document();
 
-    final logoo = pw.MemoryImage((await http.get(Uri.parse(logo!))).bodyBytes);
-
+    // ---------------- COLORS ----------------
     final blue = PdfColor.fromHex("#0A3D91");
     final lightBlue = PdfColor.fromHex("#1E5CC4");
+
+    // ---------------- SAFE LOGO ----------------
+    pw.Widget logoWidget = pw.SizedBox(width: 110, height: 50);
+
+    try {
+      if (logo != null && logo!.isNotEmpty) {
+        final logoImage = await networkImage(logo!);
+        logoWidget = pw.Image(
+          logoImage,
+          width: 110,
+          height: 50,
+          fit: pw.BoxFit.contain,
+        );
+      }
+    } catch (_) {
+      logoWidget = pw.SizedBox(width: 110, height: 50);
+    }
 
     pdf.addPage(
       pw.Page(
         theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
-        // margin: const pw.EdgeInsets.all(28),
         build: (context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // ------------------------ HEADER ------------------------
+              // ================= HEADER =================
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -656,7 +670,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        "$hospitalName",
+                        hospitalName ?? "",
                         style: pw.TextStyle(
                           fontSize: 24,
                           fontWeight: pw.FontWeight.bold,
@@ -665,8 +679,8 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       ),
                       pw.SizedBox(height: 3),
                       pw.Text(
-                        "$hospitalPlace",
-                        style: pw.TextStyle(fontSize: 11),
+                        hospitalPlace ?? "",
+                        style: const pw.TextStyle(fontSize: 11),
                       ),
                       pw.Text(
                         "Accurate  |  Caring  |  Instant",
@@ -677,17 +691,11 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       ),
                     ],
                   ),
-
                   pw.Container(
-                    color: PdfColors.white,
-                    height: 50,
                     width: 120,
-                    child: pw.ClipRect(
-                      child: pw.FittedBox(
-                        fit: pw.BoxFit.cover,
-                        child: pw.Image(logoo),
-                      ),
-                    ),
+                    height: 50,
+                    alignment: pw.Alignment.centerRight,
+                    child: logoWidget,
                   ),
                 ],
               ),
@@ -696,7 +704,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
               pw.Divider(),
               pw.SizedBox(height: 18),
 
-              // ------------------------ PATIENT INFO BOX ------------------------
+              // ================= PATIENT INFO =================
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
@@ -704,47 +712,41 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                   border: pw.Border.all(color: PdfColor.fromHex("#D9D9D9")),
                 ),
                 child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
                   children: [
-                    // LEFT SIDE
                     pw.Expanded(
-                      flex: 1,
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
                             "Name: ${nameController.text}",
-                            style: pw.TextStyle(fontSize: 11),
+                            style: const pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "PID: ${widget.fee['Patient']['user_Id']}",
-                            style: pw.TextStyle(fontSize: 11),
+                            style: const pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "Phone: ${cellController.text}",
-                            style: pw.TextStyle(fontSize: 11),
+                            style: const pw.TextStyle(fontSize: 11),
                           ),
                         ],
                       ),
                     ),
-
-                    // RIGHT SIDE
                     pw.Expanded(
-                      flex: 1,
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
                           pw.Text(
                             "Age: ${calculateAge(dobController.text)}",
-                            style: pw.TextStyle(fontSize: 11),
+                            style: const pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "Sex: ${widget.fee['Patient']['gender']}",
-                            style: pw.TextStyle(fontSize: 11),
+                            style: const pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "Date: ${getFormattedDate(DateTime.now().toString())}",
-                            style: pw.TextStyle(fontSize: 11),
+                            style: const pw.TextStyle(fontSize: 11),
                           ),
                         ],
                       ),
@@ -755,7 +757,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 20),
 
-              // ------------------------ TEST TITLE BAR ------------------------
+              // ================= TITLE BAR =================
               pw.Container(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.symmetric(vertical: 8),
@@ -777,8 +779,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 20),
 
-              // ------------------------ TABLE HEADER ------------------------
-              // Header
+              // ================= TABLE HEADER =================
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(
                   vertical: 10,
@@ -787,7 +788,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                 decoration: pw.BoxDecoration(
                   color: PdfColors.grey300,
                   borderRadius: pw.BorderRadius.circular(4),
-                  border: pw.Border.all(color: PdfColors.grey600, width: 1),
+                  border: pw.Border.all(color: PdfColors.grey600),
                 ),
                 child: pw.Row(
                   children: [
@@ -820,47 +821,42 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 6),
 
-              // Registration Fee
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(vertical: 6),
-                child: pw.Row(
-                  children: [
-                    pw.Expanded(
-                      flex: 3,
+              // ================= MAIN FEE =================
+              pw.Row(
+                children: [
+                  pw.Expanded(
+                    flex: 3,
+                    child: pw.Text(
+                      widget.fee['reason'],
+                      style: const pw.TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  pw.Expanded(
+                    flex: 1,
+                    child: pw.Align(
+                      alignment: pw.Alignment.centerRight,
                       child: pw.Text(
-                        "${widget.fee['reason']}", // Registration or Consultation
+                        "₹ ${widget.fee['amount']}",
                         style: const pw.TextStyle(fontSize: 11),
                       ),
                     ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          "₹ ${widget.fee['amount']}",
-                          style: const pw.TextStyle(fontSize: 11),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
               pw.Divider(),
 
-              pw.SizedBox(height: 4),
-
-              // Tests List
+              // ================= TEST LIST =================
               if (widget.fee['TestingAndScanningPatients'] != null)
                 ...widget.fee['TestingAndScanningPatients'].map<pw.Widget>((t) {
-                  return pw.Container(
+                  return pw.Padding(
                     padding: const pw.EdgeInsets.symmetric(vertical: 6),
                     child: pw.Row(
                       children: [
                         pw.Expanded(
                           flex: 3,
                           child: pw.Text(
-                            "${t['title']}",
+                            t['title'],
                             style: const pw.TextStyle(fontSize: 11),
                           ),
                         ),
@@ -879,9 +875,9 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                   );
                 }).toList(),
 
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 14),
 
-              // ------------------------ TOTAL ------------------------
+              // ================= TOTAL =================
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
@@ -896,7 +892,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 30),
 
-              // ------------------------ FOOTER ------------------------
+              // ================= FOOTER =================
               pw.Center(
                 child: pw.Text(
                   "Thank you for choosing Green Valley Hospital",
