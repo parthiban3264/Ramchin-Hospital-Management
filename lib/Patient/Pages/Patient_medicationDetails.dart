@@ -117,8 +117,6 @@ class MedicationDetailPage extends StatelessWidget {
   }
 
   Widget _buildConsultationInfo() {
-    print(data);
-    print(data['purpose']);
     return _sectionCard(
       title: "Consultation Details",
       icon: Icons.assignment_turned_in,

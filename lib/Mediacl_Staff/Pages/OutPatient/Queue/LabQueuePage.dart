@@ -39,9 +39,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
           queueStatus == 'PENDING' ||
           queueStatus == 'COMPLETED') {
         String patientId =
-
             record['Patient']?['id']?.toString() ??
-
             record['patient_Id']?.toString() ??
             'unknown';
         if (!groupedRecords.containsKey(patientId)) {
@@ -90,7 +88,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -187,7 +185,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -270,8 +268,6 @@ class _PatientTestCardState extends State<PatientTestCard> {
 
   @override
   Widget build(BuildContext context) {
-
-    print(widget.patient);
     String patientName = widget.patient['name'] ?? 'Unknown';
     String patientId = widget.patient['id']?.toString() ?? 'N/A';
 
@@ -286,123 +282,131 @@ class _PatientTestCardState extends State<PatientTestCard> {
       }
     }
 
-    Widget cardContent = Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Header with patient gender icon and name
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    Widget cardContent = Center(
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 600),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              Icon(widget.genderIcon, size: 28, color: widget.genderColor),
-              const SizedBox(width: 8),
-              Text(
-                patientName,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: widget.genderColor,
+              // Header with patient gender icon and name
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(widget.genderIcon, size: 28, color: widget.genderColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    patientName,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: widget.genderColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Divider(
+                color: Colors.grey.shade400,
+                thickness: 1.4,
+                indent: 25,
+                endIndent: 25,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: Column(
+                  children: [
+                    _infoRow('Patient ID', patientId),
+                    const SizedBox(height: 6),
+                    _infoRow('Cell No', patientPhone),
+                    const SizedBox(height: 6),
+                    _infoRow('Address', patientAddress),
+                  ],
                 ),
+              ),
+              Divider(
+                color: Colors.grey.shade400,
+                thickness: 1.4,
+                indent: 25,
+                endIndent: 25,
+              ),
+
+              // Always show all test titles (even if completed)
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: widget.tests.length,
+                itemBuilder: (context, index) {
+                  final test = widget.tests[index];
+                  final testId = test['id'];
+                  final title = test['title'] ?? 'No Title';
+                  final queueStatus = (test['queueStatus'] ?? '')
+                      .toString()
+                      .toLowerCase();
+
+                  bool isCompletedLocal =
+                      testId != null && _completedTestIds.contains(testId);
+                  bool isCompletedStatus = queueStatus == 'completed';
+
+                  Widget trailingIcon;
+                  if (isCompletedStatus) {
+                    trailingIcon = const Icon(
+                      Icons.done_all,
+                      color: Colors.blue,
+                    );
+                  } else if (isCompletedLocal) {
+                    trailingIcon = const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                    );
+                  } else {
+                    trailingIcon = const Icon(Icons.chevron_right);
+                  }
+
+                  return Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    child: ListTile(
+                      title: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                      ),
+                      trailing: trailingIcon,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LabPage(
+                              allTests: widget.tests
+                                  .map((e) => Map<String, dynamic>.from(e))
+                                  .toList(),
+                              currentIndex: index,
+                              queueStaus: queueStatus.toUpperCase(),
+                              mode: 0, // individual test click
+                            ),
+                          ),
+                        );
+                        if (result == true && testId != null) {
+                          setState(() {
+                            _completedTestIds.add(testId);
+                          });
+                          widget.onRefresh();
+                        }
+                      },
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Divider(
-            color: Colors.grey.shade400,
-            thickness: 1.4,
-            indent: 25,
-            endIndent: 25,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Column(
-              children: [
-                _infoRow('Patient ID', patientId),
-                const SizedBox(height: 6),
-                _infoRow('Cell No', patientPhone),
-                const SizedBox(height: 6),
-                _infoRow('Address', patientAddress),
-              ],
-            ),
-          ),
-          Divider(
-            color: Colors.grey.shade400,
-            thickness: 1.4,
-            indent: 25,
-            endIndent: 25,
-          ),
-
-          // Always show all test titles (even if completed)
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.tests.length,
-            itemBuilder: (context, index) {
-              final test = widget.tests[index];
-              final testId = test['id'];
-              final title = test['title'] ?? 'No Title';
-              final queueStatus = (test['queueStatus'] ?? '')
-                  .toString()
-                  .toLowerCase();
-
-              bool isCompletedLocal =
-                  testId != null && _completedTestIds.contains(testId);
-              bool isCompletedStatus = queueStatus == 'completed';
-
-              Widget trailingIcon;
-              if (isCompletedStatus) {
-                trailingIcon = const Icon(Icons.done_all, color: Colors.blue);
-              } else if (isCompletedLocal) {
-                trailingIcon = const Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
-                );
-              } else {
-                trailingIcon = const Icon(Icons.chevron_right);
-              }
-
-              return Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                child: ListTile(
-                  title: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
-                    ),
-                  ),
-                  trailing: trailingIcon,
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => LabPage(
-                          allTests: widget.tests
-                              .map((e) => Map<String, dynamic>.from(e))
-                              .toList(),
-                          currentIndex: index,
-                          queueStaus: queueStatus.toUpperCase(),
-                          mode: 0, // individual test click
-                        ),
-                      ),
-                    );
-                    if (result == true && testId != null) {
-                      setState(() {
-                        _completedTestIds.add(testId);
-                      });
-                      widget.onRefresh();
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
 
@@ -437,10 +441,10 @@ class _PatientTestCardState extends State<PatientTestCard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: widget.genderColor.withOpacity(0.7)),
+          border: Border.all(color: widget.genderColor.withValues(alpha: 0.7)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black45.withOpacity(0.35),
+              color: Colors.black45.withValues(alpha: 0.35),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

@@ -1,20 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
-import 'package:image_picker/image_picker.dart';
-
-import '../../../Widgets/global_notifiers.dart';
-import '../Queue/X-RayQueuePage.dart';
-
 import '../Report/ScanReportPage.dart';
-
 
 class UltersoundPage extends StatefulWidget {
   final Map<String, dynamic> record;
@@ -30,7 +25,6 @@ class UltersoundPage extends StatefulWidget {
 
 class _UltersoundPageState extends State<UltersoundPage>
     with SingleTickerProviderStateMixin {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final socketService = SocketService();
   final Color primaryColor = const Color(0xFFBF955E);
   bool _isPatientExpanded = false;
@@ -38,7 +32,7 @@ class _UltersoundPageState extends State<UltersoundPage>
   bool _isLoading = false; // <-- Add this to your State class
   String? _dateTime;
   // File? _pickedImage;
-  List<File> _pickedImages = [];
+  final List<File> _pickedImages = [];
   Map<String, TextEditingController> noteControllers = {};
   bool _isCompleted = false;
   String? logo;
@@ -74,7 +68,9 @@ class _UltersoundPageState extends State<UltersoundPage>
   }
 
   void _loadHospitalLogo() async {
-    logo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
+
+    logo = prefs.getString('hospitalPhoto');
     setState(() {});
   }
 
@@ -165,7 +161,9 @@ class _UltersoundPageState extends State<UltersoundPage>
 
     try {
       final Id = widget.record['id'];
-      final Staff_Id = await secureStorage.read(key: 'userId');
+      final prefs = await SharedPreferences.getInstance();
+
+      final Staff_Id = prefs.getString('userId');
       final patient = widget.record['Patient'] ?? {};
       final consultationList = patient['Consultation'] ?? [];
 
@@ -222,7 +220,6 @@ class _UltersoundPageState extends State<UltersoundPage>
           ? widget.record['consulateId']
           : null;
 
-      print("Consultation ID: $consultationId");
       final Id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
       await TestingScanningService().updateTesting(Id, {'status': 'COMPLETED'});
@@ -257,8 +254,6 @@ class _UltersoundPageState extends State<UltersoundPage>
 
   @override
   Widget build(BuildContext context) {
-    print('records : ${widget.record}');
-    print('_currentRecord:$_currentRecord');
     final record = widget.record;
     final patient = record['Patient'] ?? {};
     // final phone = patient['phone']?['mobile'] ?? 'N/A';
@@ -279,7 +274,6 @@ class _UltersoundPageState extends State<UltersoundPage>
     } else {
       phone = 'N/A';
     }
-
 
     final patientId = patient['id'].toString() ?? 'N/A';
 
@@ -456,7 +450,6 @@ class _UltersoundPageState extends State<UltersoundPage>
                         ),
                         const SizedBox(height: 10),
                         TextField(
-
                           cursorColor: primaryColor,
 
                           controller: _descriptionController,
@@ -732,7 +725,6 @@ class _UltersoundPageState extends State<UltersoundPage>
                 const SizedBox(height: 8),
 
                 TextField(
-
                   cursorColor: primaryColor,
 
                   controller: noteControllers[optionName],
@@ -857,7 +849,6 @@ class _UltersoundPageState extends State<UltersoundPage>
                 ),
               ),
             ],
-
           ),
 
           if (_pickedImages.isNotEmpty)

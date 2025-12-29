@@ -1,15 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class TestingScanningService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   /// Create a Testing/Scanning record
   Future<void> createTestingScanning(Map<String, dynamic> data) async {
     final url = Uri.parse('$baseUrl/testing_and_scanning_patient/create');
@@ -18,14 +15,15 @@ class TestingScanningService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
-    print(response.body);
+
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception('Failed to create testing/scanning: ${response.body}');
     }
   }
 
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -88,7 +86,7 @@ class TestingScanningService {
         ),
         headers: {"Content-Type": "application/json"},
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -114,7 +112,7 @@ class TestingScanningService {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(data),
       );
-      print('Testing Response: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -157,7 +155,7 @@ class TestingScanningService {
   //     var response = await request.send();
   //     var responseBody = await response.stream.bytesToString();
   //
-  //     print(responseBody);
+  //
   //
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       return jsonDecode(responseBody);
@@ -176,8 +174,6 @@ class TestingScanningService {
     Map<String, dynamic> fields, // <-- CHANGE HERE
     List<File> images,
   ) async {
-    print('fields $fields');
-    print('images $images');
     try {
       var uri = Uri.parse(
         "$baseUrl/testing_and_scanning_patient/updateByIdScanning/$id",
@@ -201,8 +197,6 @@ class TestingScanningService {
 
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
-      print(response);
-      print(responseBody);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(responseBody);
@@ -222,8 +216,7 @@ class TestingScanningService {
   //   Map<String, dynamic> fields,
   //   List<File> images,
   // ) async {
-  //   print('fields $fields');
-  //   print('images $images');
+  //
   //
   //   try {
   //     var uri = Uri.parse(
@@ -248,8 +241,7 @@ class TestingScanningService {
   //
   //     var response = await request.send();
   //     var responseBody = await response.stream.bytesToString();
-  //     print(response);
-  //     print(responseBody);
+  //
   //
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       return jsonDecode(responseBody);

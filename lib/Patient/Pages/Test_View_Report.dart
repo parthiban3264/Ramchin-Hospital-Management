@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-
 import '../../Mediacl_Staff/Pages/OutPatient/Report/ReportCard.dart';
-
 import '../../Pages/NotificationsPage.dart';
 
 class ViewReportPage extends StatelessWidget {
@@ -21,7 +19,6 @@ class ViewReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('patient:$patient');
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),

@@ -1,15 +1,16 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class DrawerService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   DrawerService();
 
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -27,7 +28,7 @@ class DrawerService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(drawerData),
     );
-    print(response.body);
+
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {

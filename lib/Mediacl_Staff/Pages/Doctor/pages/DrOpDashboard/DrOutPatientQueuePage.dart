@@ -1,13 +1,13 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Pages/NotificationsPage.dart';
 import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
-
 import '../../../../../Services/socket_service.dart';
 import '../patient_description_page.dart';
 
@@ -20,8 +20,6 @@ class DrOutPatientQueuePage extends StatefulWidget {
 }
 
 class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   final Color primaryColor = const Color(0xFFBF955E);
   final Color maleBorderColor = Colors.lightBlue.shade400; // Accent blue
   final Color femaleBorderColor = const Color(0xFFF48FB1); // Pink
@@ -54,11 +52,11 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
     if (showLoading) setState(() => isInitialLoad = true);
 
     try {
-
+      final prefs = await SharedPreferences.getInstance();
       if (widget.role == 'doctor') {
-        doctorId = await secureStorage.read(key: 'userId');
+        doctorId = prefs.getString('userId');
       } else {
-        final userId = await secureStorage.read(key: 'userId');
+        final userId = prefs.getString('userId');
         final doctorData = await AdminService().getMedicalStaff();
 
         final matchedDoctor = doctorData.firstWhere(
@@ -272,7 +270,7 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
         final currentQueueStatus = (consultation['queueStatus'] ?? "")
             .toString()
             .toLowerCase();
-        print('currentQueueStatus :$currentQueueStatus');
+
         // 🔥 Only update the first time (Pending → Ongoing)
         if (currentQueueStatus == 'drqueue' ||
             currentQueueStatus == 'DRQUEUE') {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Injection_Service.dart';
 
@@ -13,7 +14,6 @@ class AddInjectionPage extends StatefulWidget {
 
 class _AddInjectionPageState extends State<AddInjectionPage> {
   final _formKey = GlobalKey<FormState>();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   final TextEditingController injectionNameController = TextEditingController();
   final TextEditingController expiryDateController = TextEditingController();
@@ -91,8 +91,8 @@ class _AddInjectionPageState extends State<AddInjectionPage> {
     setState(() => _isLoading = true);
 
     try {
-      final hospitalId = await secureStorage.read(key: 'hospitalId');
-
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
       final Map<String, int> stockMap = {};
       final Map<String, double> amountMap = {};
 

@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReportCardWidget extends StatelessWidget {
@@ -597,7 +597,6 @@ class ReportCardWidget extends StatelessWidget {
   /// --- UI ---
   @override
   Widget build(BuildContext context) {
-    print('recorg:$record');
     bool isViewing = false;
     bool isSharing = false;
     final patient = record['Patient'] ?? {};
@@ -825,8 +824,6 @@ class ReportCardWidget extends StatelessWidget {
     Map<String, dynamic> patient,
     Map<String, dynamic> hospital,
   ) {
-    print('patient$patient');
-    print('hospital$hospital');
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 4, bottom: 15),

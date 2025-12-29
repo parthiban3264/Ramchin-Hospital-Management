@@ -1,7 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Scan_Test_Get-Service.dart';
@@ -27,11 +28,10 @@ class _AddScanPageState extends State<AddScanPage>
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
 
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   int? editingId;
   bool isLoading = false;
   String? _dateTime;
+  SharedPreferences? _prefs;
 
   List<Map<String, dynamic>> selectedOptions = [];
   List<dynamic> scanTestList = [];
@@ -73,7 +73,7 @@ class _AddScanPageState extends State<AddScanPage>
   Future<void> fetchAllOptionName() async {
     setState(() => isLoading = true);
     optionList = await ScanTestGetService().getAllUnitReference('SCAN');
-    print('optionList $optionList');
+
     setState(() => isLoading = false);
   }
 
@@ -118,7 +118,7 @@ class _AddScanPageState extends State<AddScanPage>
       return;
     }
 
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final hospitalId = _prefs?.getString('hospitalId');
     setState(() => isLoading = true);
 
     final testData = {

@@ -15,15 +15,11 @@ class SocketService {
 
     socket.connect();
 
-    socket.onConnect((_) {
-      print('✅ Connected to Socket.IO');
-    });
+    socket.onConnect((_) {});
 
-    socket.on('queueStatusUpdate', (data) {
-      print('🔥 Queue Updated: $data');
-    });
+    socket.on('queueStatusUpdate', (data) {});
 
-    socket.onDisconnect((_) => print('❌ Disconnected from socket'));
+    socket.onDisconnect((_) {});
   }
 
   void disconnect() {

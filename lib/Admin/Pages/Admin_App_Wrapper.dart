@@ -1,6 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Pages/login/widget/HospitalLoginPage.dart';
 import '../../Services/admin_service.dart';
@@ -38,17 +39,15 @@ class _AdminAppWrapperState extends State<AdminAppWrapper> {
       if (!mounted) return;
 
       try {
-        final storage = const FlutterSecureStorage();
-        final userId = await storage.read(key: "userId");
-        final hospitalId = await storage.read(key: "hospitalId");
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getString('userId');
+        final hospitalId = prefs.getString('hospitalId');
 
         if (hospitalId == null || userId == null) return;
 
         // Load all staff
         final staffList = await AdminService().getMedicalStaff();
-        // print("staffList = $staffList");
         if (staffList.isEmpty) return;
-
 
         // Find CURRENT user
         final currentStaff = staffList.firstWhere(
@@ -77,7 +76,7 @@ class _AdminAppWrapperState extends State<AdminAppWrapper> {
           _showInactiveDialog();
         }
       } catch (e) {
-        debugPrint("Error checking staff status: $e");
+        setState(() {});
       }
     });
   }
@@ -193,9 +192,9 @@ class _AdminAppWrapperState extends State<AdminAppWrapper> {
     countdownTimer = null;
     _statusTimer?.cancel();
 
-    const secureStorage = FlutterSecureStorage();
+    final prefs = await SharedPreferences.getInstance();
     await AuthService().logout();
-    await secureStorage.deleteAll();
+    await prefs.clear();
 
     navigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const HospitalLoginPage()),
@@ -212,7 +211,6 @@ class _AdminAppWrapperState extends State<AdminAppWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    print('widget.child = ${widget.child}');
     return widget.child;
   }
 }

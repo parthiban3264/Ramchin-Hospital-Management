@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Medicine_Service.dart';
 
 class AddMedicianPage extends StatefulWidget {
@@ -14,8 +13,6 @@ class AddMedicianPage extends StatefulWidget {
 
 class _AddMedicianPageState extends State<AddMedicianPage> {
   final _formKey = GlobalKey<FormState>();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   final TextEditingController medicianNameController = TextEditingController();
   final TextEditingController medicianCodeController = TextEditingController();
   final TextEditingController stockController = TextEditingController();
@@ -62,8 +59,8 @@ class _AddMedicianPageState extends State<AddMedicianPage> {
     setState(() => _isLoading = true); // 🔹 show loading
 
     try {
-      final hospitalId = await secureStorage.read(key: 'hospitalId');
-
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
       final medicianData = {
         "hospital_Id": int.parse(hospitalId!),
         "medicianName": medicianNameController.text.trim(),
@@ -108,59 +105,6 @@ class _AddMedicianPageState extends State<AddMedicianPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
-        child: Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: gold,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Text(
-                    "Add Medicine",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(15),

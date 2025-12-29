@@ -1,9 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../Pages/NotificationsPage.dart';
 import '../../Services/admin_service.dart';
 import 'globals.dart';
@@ -11,7 +12,7 @@ import 'globals.dart';
 const Color primaryColor = Color(0xFFBF955E);
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({Key? key}) : super(key: key);
+  const EditProfilePage({super.key});
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -21,7 +22,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final AdminService _adminService = AdminService();
   final ImagePicker _picker = ImagePicker();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   late TextEditingController _nameController;
   late TextEditingController _specialistController;
@@ -202,7 +202,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         photoUrl = '$photoUrl?ts=${DateTime.now().millisecondsSinceEpoch}';
       }
 
-      print('photoUrl $photoUrl');
       final response = await _adminService.updateAdminProfile({
         "name": _nameController.text,
         "specialist": _specialistController.text,
@@ -227,7 +226,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _initialData['photo'] = photoUrl;
           _hasChanges = false;
         });
-        await secureStorage.write(key: 'staffPhoto', value: photoUrl);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("staffPhoto", photoUrl);
         staffPhotoNotifier.value = photoUrl;
         ScaffoldMessenger.of(
           context,
@@ -310,7 +310,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -358,103 +358,111 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 600),
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
 
-                child: Column(
-                  children: [
-                    Stack(
+                    child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundColor: primaryColor.withOpacity(0.2),
-                          backgroundImage: _selectedImage != null
-                              ? FileImage(_selectedImage!)
-                              : NetworkImage(photoUrl!) as ImageProvider,
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundColor: primaryColor.withValues(
+                                alpha: 0.2,
+                              ),
+                              backgroundImage: _selectedImage != null
+                                  ? FileImage(_selectedImage!)
+                                  : NetworkImage(photoUrl!) as ImageProvider,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 4,
+                              child: InkWell(
+                                onTap: _showImagePickerDialog,
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: primaryColor,
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 4,
-                          child: InkWell(
-                            onTap: _showImagePickerDialog,
-                            child: CircleAvatar(
-                              radius: 18,
+                        const SizedBox(height: 30),
+                        _buildTextField(
+                          label: "Full Name",
+                          controller: _nameController,
+                          icon: Icons.person,
+                        ),
+                        _buildTextField(
+                          label: "Specialist",
+                          controller: _specialistController,
+                          icon: Icons.medical_services_outlined,
+                        ),
+                        _buildTextField(
+                          label: "Email",
+                          controller: _emailController,
+                          icon: Icons.email,
+                          inputType: TextInputType.emailAddress,
+                          validator: _validateEmail,
+                        ),
+
+                        _buildTextField(
+                          label: "Phone",
+                          controller: _phoneController,
+                          icon: Icons.phone,
+                          inputType: TextInputType.phone,
+                          validator: _validatePhone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                        ),
+
+                        _buildTextField(
+                          label: "Address",
+                          controller: _addressController,
+                          icon: Icons.home,
+                          maxLines: 2,
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.save, color: Colors.white),
+                            style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
-                              child: const Icon(
-                                Icons.camera_alt,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed:
+                                (!_hasChanges || !_isFormValid || _isSaving)
+                                ? null
+                                : _saveProfile,
+
+                            label: const Text(
+                              "Save Changes",
+                              style: TextStyle(
                                 color: Colors.white,
-                                size: 18,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
-                    _buildTextField(
-                      label: "Full Name",
-                      controller: _nameController,
-                      icon: Icons.person,
-                    ),
-                    _buildTextField(
-                      label: "Specialist",
-                      controller: _specialistController,
-                      icon: Icons.medical_services_outlined,
-                    ),
-                    _buildTextField(
-                      label: "Email",
-                      controller: _emailController,
-                      icon: Icons.email,
-                      inputType: TextInputType.emailAddress,
-                      validator: _validateEmail,
-                    ),
-
-                    _buildTextField(
-                      label: "Phone",
-                      controller: _phoneController,
-                      icon: Icons.phone,
-                      inputType: TextInputType.phone,
-                      validator: _validatePhone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                    ),
-
-                    _buildTextField(
-                      label: "Address",
-                      controller: _addressController,
-                      icon: Icons.home,
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.save, color: Colors.white),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: (!_hasChanges || !_isFormValid || _isSaving)
-                            ? null
-                            : _saveProfile,
-
-                        label: const Text(
-                          "Save Changes",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

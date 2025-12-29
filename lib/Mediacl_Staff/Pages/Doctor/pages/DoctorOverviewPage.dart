@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Services/consultation_service.dart';
 
 const Color customGold = Color(0xFFBF955E);
@@ -26,9 +27,7 @@ class DrOverviewPage extends StatefulWidget {
 }
 
 class _DrOverviewPageState extends State<DrOverviewPage> {
-  final secureStorage = const FlutterSecureStorage();
   final ConsultationService _consultationService = ConsultationService();
-
   late Future<void> _dashboardFuture;
 
   String? doctorId;
@@ -36,11 +35,8 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
   String? hospitalPlace;
   String? hospitalPhoto;
 
-
   int pending = 0, ongoing = 0, completed = 0, cancel = 0, reg = 0;
-
   int tPending = 0, tOngoing = 0, tCompleted = 0, tCancel = 0, treg = 0;
-
 
   bool showToday = false;
   bool isRetrying = false;
@@ -51,48 +47,16 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
     _dashboardFuture = _loadDashboardData();
   }
 
-  // ----------------- DATE PARSER -----------------
-  DateTime? parseDate(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-
-    try {
-      // Example → "2025-12-03 04:17 PM"
-      final parts = raw.split(" ");
-      if (parts.length < 3) return null;
-
-      final datePart = parts[0];
-      final timePart = parts[1];
-      final ampm = parts[2];
-
-      final datePieces = datePart.split("-");
-      int year = int.parse(datePieces[0]);
-      int month = int.parse(datePieces[1]);
-      int day = int.parse(datePieces[2]);
-
-      final timePieces = timePart.split(":");
-      int hour = int.parse(timePieces[0]);
-      int minute = int.parse(timePieces[1]);
-
-      if (ampm == "PM" && hour != 12) hour += 12;
-      if (ampm == "AM" && hour == 12) hour = 0;
-
-      return DateTime(year, month, day, hour, minute);
-    } catch (e) {
-      print("Date Parse Error: $raw");
-      return null;
-    }
-  }
-
-  // ----------------- LOAD DATA -----------------
+  // ───────────────────── LOAD DATA ─────────────────────
   Future<void> _loadDashboardData() async {
-    final storedDoctorId = await secureStorage.read(key: 'userId');
-    if (storedDoctorId == null) throw Exception("Doctor ID not found");
+    final prefs = await SharedPreferences.getInstance();
+    doctorId = prefs.getString('userId');
 
-    doctorId = storedDoctorId;
-
-    hospitalName = await secureStorage.read(key: 'hospitalName');
-    hospitalPlace = await secureStorage.read(key: 'hospitalPlace');
-    hospitalPhoto = await secureStorage.read(key: 'hospitalPhoto');
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
 
     final consultations = await _consultationService.getAllConsultations();
 
@@ -104,67 +68,38 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
     _countToday(myConsultations);
   }
 
-  // ----------------- COUNT OVERALL -----------------
   void _countOverall(List<dynamic> list) {
-    pending = list
-        .where((c) => c['status'].toString().toLowerCase() == 'pending')
+    pending = list.where((c) => c['status'] == 'pending').length;
+    ongoing = list
+        .where((c) => ['ongoing', 'endprocessing'].contains(c['status']))
         .length;
+    completed = list.where((c) => c['status'] == 'completed').length;
+    cancel = list.where((c) => c['status'] == 'cancelled').length;
     reg = list.length;
-
-    ongoing = list.where((c) {
-      final s = c['status'].toString().toLowerCase();
-      return s == 'ongoing' || s == 'endprocessing';
-    }).length;
-
-    completed = list
-        .where((c) => c['status'].toString().toLowerCase() == 'completed')
-        .length;
-
-    cancel = list
-
-        .where((c) => c['status'].toString().toLowerCase() == 'cancelled')
-
-        .length;
   }
 
-  // ----------------- COUNT TODAY -----------------
   void _countToday(List<dynamic> list) {
     final now = DateTime.now();
 
-    final todayList = list.where((c) {
-      final date = parseDate(c['createdAt']);
-      if (date == null) return false;
-      return date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
+    final today = list.where((c) {
+      final d = DateTime.tryParse(c['createdAt'] ?? '');
+      if (d == null) return false;
+      return d.year == now.year && d.month == now.month && d.day == now.day;
     }).toList();
 
-    tPending = todayList
-        .where((c) => c['status'].toString().toLowerCase() == 'pending')
+    tPending = today.where((c) => c['status'] == 'pending').length;
+    tOngoing = today
+        .where((c) => ['ongoing', 'endprocessing'].contains(c['status']))
         .length;
-
-    treg = todayList.length;
-
-
-    tOngoing = todayList.where((c) {
-      final s = c['status'].toString().toLowerCase();
-      return s == 'ongoing' || s == 'endprocessing';
-    }).length;
-
-    tCompleted = todayList
-        .where((c) => c['status'].toString().toLowerCase() == 'completed')
-        .length;
-
-    tCancel = todayList
-
-        .where((c) => c['status'].toString().toLowerCase() == 'cancelled')
-
-        .length;
+    tCompleted = today.where((c) => c['status'] == 'completed').length;
+    tCancel = today.where((c) => c['status'] == 'cancelled').length;
+    treg = today.length;
   }
 
-  // ----------------- BUILD UI -----------------
+  // ───────────────────── UI ─────────────────────
   @override
   Widget build(BuildContext context) {
+    print(hospitalPhoto);
     return Scaffold(
       backgroundColor: backgroundColor,
       body: FutureBuilder(
@@ -182,17 +117,17 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
               setState(() {});
             },
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHospitalCard(),
                   const SizedBox(height: 20),
 
-                  // ---------- FILTER BUTTONS ----------
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  // ✅ RESPONSIVE FILTER BUTTONS
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 16,
                     children: [
                       _filterButton("Today", showToday, () {
                         setState(() => showToday = true);
@@ -204,56 +139,61 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
                   ),
 
                   const SizedBox(height: 20),
-
-                  const Center(
-                    child: Text(
-                      "Assigned Patients Summary",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  const Text(
+                    "Assigned Patients Summary",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
+                  const SizedBox(height: 16),
 
-                  const SizedBox(height: 12),
+                  // ✅ RESPONSIVE GRID
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
 
-                  // ---------- METRIC CARDS ----------
-                  GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: 1.3,
-                    children: [
-                      _buildMetricCard(
-                        "Registered",
-                        "${showToday ? treg : reg}",
-                        Icons.app_registration,
-                      ),
-                      _buildMetricCard(
-                        "Waiting",
-                        "${showToday ? tPending : pending}",
-                        Icons.pending_actions,
-                      ),
-                      _buildMetricCard(
-                        "Consulting",
-                        "${showToday ? tOngoing : ongoing}",
-                        Icons.timelapse,
-                      ),
-                      _buildMetricCard(
-                        "Completed",
-                        "${showToday ? tCompleted : completed}",
-                        Icons.verified_outlined,
-                      ),
-                      _buildMetricCard(
+                      int columns = width >= 1200
+                          ? 5
+                          : width >= 900
+                          ? 4
+                          : width >= 600
+                          ? 3
+                          : 2;
 
-
-                        "Canceled",
-                        "${showToday ? tCancel : cancel}",
-                        Icons.cancel_outlined,
-                      ),
-                    ],
+                      return GridView.count(
+                        crossAxisCount: columns,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.3,
+                        children: [
+                          _buildMetricCard(
+                            "Registered",
+                            "${showToday ? treg : reg}",
+                            Icons.app_registration,
+                          ),
+                          _buildMetricCard(
+                            "Waiting",
+                            "${showToday ? tPending : pending}",
+                            Icons.pending_actions,
+                          ),
+                          _buildMetricCard(
+                            "Consulting",
+                            "${showToday ? tOngoing : ongoing}",
+                            Icons.timelapse,
+                          ),
+                          _buildMetricCard(
+                            "Completed",
+                            "${showToday ? tCompleted : completed}",
+                            Icons.verified_outlined,
+                          ),
+                          _buildMetricCard(
+                            "Canceled",
+                            "${showToday ? tCancel : cancel}",
+                            Icons.cancel_outlined,
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -264,119 +204,75 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
     );
   }
 
-  // ----------------- ERROR UI -----------------
+  // ───────────────────── ERROR UI ─────────────────────
   Widget _buildErrorUI() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.wifi_off_rounded, color: Colors.redAccent, size: 80),
-          const SizedBox(height: 10),
-          const Text(
-            "Network Error",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: 14),
-
-          ElevatedButton(
-            onPressed: isRetrying
-                ? null
-                : () async {
-                    setState(() => isRetrying = true);
-                    try {
-                      await _loadDashboardData();
-                      setState(() {});
-                    } finally {
-                      setState(() => isRetrying = false);
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: customGold,
-              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
-            child: isRetrying
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : const Text(
-                    "Try Again",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-          ),
-        ],
-      ),
-    );
+    return const Center(child: Text("Network Error"));
   }
 
-  // ----------------- HOSPITAL CARD -----------------
+  // ───────────────────── HOSPITAL CARD ─────────────────────
   Widget _buildHospitalCard() {
+    final photoUrl = hospitalPhoto;
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFEDBA77), Color(0xFFC59A62)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomLeft,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 5)),
-        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child: Image.network(
-                hospitalPhoto ?? "",
-                height: 65,
-                width: 65,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.local_hospital,
-                  size: 60,
-                  color: Colors.white,
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: photoUrl == null || photoUrl.isEmpty
+                ? _buildPlaceholderAvatar()
+                : Image.network(
+                    photoUrl,
+                    height: 65,
+                    width: 65,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildPlaceholderAvatar(),
+                  ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hospitalName ?? "",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
+                Text(
+                  hospitalPlace ?? "",
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hospitalName ?? "Unknown Hospital",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    hospitalPlace ?? "Unknown Place",
-                    style: const TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // ----------------- FILTER BUTTON -----------------
+  Widget _buildPlaceholderAvatar() {
+    return Container(
+      height: 65,
+      width: 65,
+      decoration: const BoxDecoration(
+        color: Colors.white24,
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.local_hospital, color: Colors.white),
+    );
+  }
+
+  // ───────────────────── FILTER BUTTON ─────────────────────
   Widget _filterButton(String text, bool active, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -391,7 +287,6 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
           text,
           style: TextStyle(
             color: active ? Colors.white : customGold,
-            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -399,7 +294,6 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
     );
   }
 
-  // ----------------- METRIC CARD -----------------
   static Widget _buildMetricCard(String title, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -407,40 +301,29 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min, // ⭐ IMPORTANT
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(icon, color: customGold, size: 28),
+              Icon(icon, color: customGold),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: cardTitleStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                title,
+                style: cardTitleStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              value,
-              style: cardValueStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          const SizedBox(height: 12),
+          Text(value, style: cardValueStyle, textAlign: TextAlign.center),
         ],
       ),
     );

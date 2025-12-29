@@ -1,9 +1,11 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../Services/patient_service.dart';
-import '../../Services/consultation_service.dart';
+
 import '../../Services/Doctor/doctor_service.dart';
+import '../../Services/consultation_service.dart';
+import '../../Services/patient_service.dart';
 import '../NotificationsPage.dart';
 import '../payment_modal.dart';
 
@@ -203,15 +205,12 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
         "sugar": sugarController.text,
       });
 
-      print('patientUpdate $patientUpdate');
       final a = {
         "height": int.parse(heightController.text),
         "weight": int.parse(weightController.text),
         "bp": bpController.text,
         "sugar": sugarController.text,
       };
-      print(a);
-      print("patientUpdate $patientUpdate");
 
       if (response['status'] == 'success' &&
           patientUpdate['status'] == 'success') {
@@ -220,7 +219,6 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
         _showSnackBar('Failed to create consultation');
       }
     } catch (e) {
-      print(e.toString());
       _showSnackBar('Error: $e');
     } finally {
       setState(() => isSubmitting = false);

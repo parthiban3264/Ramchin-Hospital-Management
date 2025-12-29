@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-
-import 'package:flutter/services.dart';
-
 import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/admin_service.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AddAdminPage extends StatefulWidget {
   const AddAdminPage({super.key});
@@ -17,7 +16,6 @@ class AddAdminPage extends StatefulWidget {
 
 class _AddAdminPageState extends State<AddAdminPage> {
   final _formKey = GlobalKey<FormState>();
-  final storage = const FlutterSecureStorage();
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController designationController = TextEditingController();
@@ -154,7 +152,8 @@ class _AddAdminPageState extends State<AddAdminPage> {
     setState(() => _isLoading = true);
 
     try {
-      final hospitalId = await storage.read(key: 'hospitalId');
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
 
       final String userIdToSave = userIdController.text.trim().isEmpty
           ? phoneController.text.trim()

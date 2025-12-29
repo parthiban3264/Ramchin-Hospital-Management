@@ -1,16 +1,17 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class InjectionService {
   InjectionService();
 
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -23,15 +24,11 @@ class InjectionService {
 
     try {
       final hospitalId = await getHospitalId();
-      print('Hospital ID: $hospitalId');
-      print('Query: $query');
 
       final response = await http.get(
         Uri.parse('$baseUrl/injections/getByName/$hospitalId/$query'),
         headers: {'Content-Type': 'application/json'},
       );
-
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
@@ -43,15 +40,12 @@ class InjectionService {
           // In case backend someday returns a plain list
           return List<Map<String, dynamic>>.from(decoded);
         } else {
-          print('Unexpected response structure: $decoded');
           return [];
         }
       }
 
-      print('Unexpected status code: ${response.statusCode}');
       return [];
     } catch (e) {
-      print("Error fetching suggestions: $e");
       return [];
     }
   }
@@ -69,7 +63,7 @@ class InjectionService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -91,8 +85,6 @@ class InjectionService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print("🔹 Response: ${response.statusCode} => ${response.body}");
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
@@ -100,16 +92,12 @@ class InjectionService {
           // Safely convert all items to Map<String, dynamic>
           return List<Map<String, dynamic>>.from(jsonResponse['data']);
         } else {
-          print("⚠️ Invalid format: Missing 'data' list in response");
           return [];
         }
       } else {
-        print("❌ Failed to fetch injections: ${response.body}");
         return [];
       }
     } catch (e, stack) {
-      print("🔥 Exception in getAllinjections: $e");
-      print(stack);
       return [];
     }
   }
@@ -127,11 +115,9 @@ class InjectionService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
-      } else {
-        print("❌ Injection update failed: ${response.statusCode}");
-      }
+      } else {}
     } catch (e) {
-      print("❌ Injection update error: $e");
+      return {};
     }
     return null;
   }

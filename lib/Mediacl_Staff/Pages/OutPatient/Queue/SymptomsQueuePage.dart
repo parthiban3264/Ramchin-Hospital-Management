@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/payment_service.dart';
 import '../Page/SymptomsPage.dart';
 
 class SymptomsQueuePage extends StatefulWidget {
-  const SymptomsQueuePage({Key? key}) : super(key: key);
+  const SymptomsQueuePage({super.key});
 
   @override
   _SymptomsQueuePageState createState() => _SymptomsQueuePageState();
@@ -74,7 +75,7 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -118,171 +119,179 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage> {
       ),
 
       // 🔹 MAIN BODY
-      body: FutureBuilder<List<dynamic>>(
-        future: futurePatients,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 600),
+          child: FutureBuilder<List<dynamic>>(
+            future: futurePatients,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Lottie.asset(
-                'assets/Lottie/error404.json',
-                width: 280,
-                height: 280,
-                fit: BoxFit.contain,
-              ),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Lottie.asset(
-                    'assets/Lottie/NoData.json',
-                    width: 250,
-                    height: 250,
-                    repeat: true,
+              if (snapshot.hasError) {
+                return Center(
+                  child: Lottie.asset(
+                    'assets/Lottie/error404.json',
+                    width: 280,
+                    height: 280,
+                    fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "No patients in Vitals queue",
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                ],
-              ),
-            );
-          }
+                );
+              }
 
-          final patients = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-            itemCount: patients.length,
-            itemBuilder: (context, index) {
-              final item = patients[index];
-              final consultationId = item['consultation_Id'];
-              final patient = item['Patient'] ?? <String, dynamic>{};
-              final createdAt = item['createdAt'];
-
-              return GestureDetector(
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SymptomsPage(
-                        patient: patient,
-                        consultationId: consultationId,
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Lottie.asset(
+                        'assets/Lottie/NoData.json',
+                        width: 250,
+                        height: 250,
+                        repeat: true,
                       ),
-                    ),
-                  );
-                  if (result == true) {
-                    setState(() {
-                      futurePatients = PaymentService().getAllPaid();
-                    });
-                  }
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.07),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "No patients in Vitals queue",
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
                       ),
                     ],
-                    border: Border.all(
-                      color: primaryColor.withOpacity(0.15),
-                      width: 1.2,
-                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Text(
-                          (patient['name'] ?? 'Unknown').toString(),
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: primaryColor,
+                );
+              }
+
+              final patients = snapshot.data!;
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
+                itemCount: patients.length,
+                itemBuilder: (context, index) {
+                  final item = patients[index];
+                  final consultationId = item['consultation_Id'];
+                  final patient = item['Patient'] ?? <String, dynamic>{};
+                  final createdAt = item['createdAt'];
+
+                  return GestureDetector(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SymptomsPage(
+                            patient: patient,
+                            consultationId: consultationId,
                           ),
                         ),
+                      );
+                      if (result == true) {
+                        setState(() {
+                          futurePatients = PaymentService().getAllPaid();
+                        });
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
                       ),
-                      const SizedBox(height: 10),
-
-                      // Divider
-                      Align(
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: 250,
-                          height: 2,
-                          color: primaryColor.withOpacity(0.4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.07),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: primaryColor.withValues(alpha: 0.15),
+                          width: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-                      // Details
-                      _infoRow(
-                        Icons.badge_outlined,
-                        "ID",
-                        (patient['id'] ?? 'N/A').toString(),
-                      ),
-
-                      // ✅ DOB & Age in ONE ROW
-                      Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.cake_outlined,
-                            size: 20,
-                            color: primaryColor,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'DOB: ${formatDob(getString(patient['dob']))} ',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
+                          Center(
+                            child: Text(
+                              (patient['name'] ?? 'Unknown').toString(),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: primaryColor,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          // Spacer(),
-                          Text(
-                            'AGE: ${calculateAge(getString(patient['dob']))} ',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.black54,
+                          const SizedBox(height: 10),
+
+                          // Divider
+                          Align(
+                            alignment: Alignment.center,
+                            child: Container(
+                              width: 250,
+                              height: 2,
+                              color: primaryColor.withValues(alpha: 0.4),
                             ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Details
+                          _infoRow(
+                            Icons.badge_outlined,
+                            "ID",
+                            (patient['id'] ?? 'N/A').toString(),
+                          ),
+
+                          // ✅ DOB & Age in ONE ROW
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.cake_outlined,
+                                size: 20,
+                                color: primaryColor,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'DOB: ${formatDob(getString(patient['dob']))} ',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              // Spacer(),
+                              Text(
+                                'AGE: ${calculateAge(getString(patient['dob']))} ',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                          _infoRow(
+                            Icons.wc_outlined,
+                            "Gender",
+                            (patient['gender'] ?? 'N/A').toString(),
+                          ),
+                          _infoRow(
+                            Icons.access_time_outlined,
+                            "Created",
+                            _formatDate(createdAt),
                           ),
                         ],
                       ),
-                      _infoRow(
-                        Icons.wc_outlined,
-                        "Gender",
-                        (patient['gender'] ?? 'N/A').toString(),
-                      ),
-                      _infoRow(
-                        Icons.access_time_outlined,
-                        "Created",
-                        _formatDate(createdAt),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -292,7 +301,7 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage> {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon, color: primaryColor.withOpacity(0.8), size: 18),
+          Icon(icon, color: primaryColor.withValues(alpha: 0.8), size: 18),
           const SizedBox(width: 10),
           Text(
             "$label:",

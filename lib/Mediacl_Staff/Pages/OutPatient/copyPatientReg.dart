@@ -199,7 +199,7 @@
 //   Future<String> loadFees() async {
 //     try {
 //       final getFees = await FeesService().getFeesByHospital();
-//       print('getFees $getFees'); // get all fees as List<dynamic>
+//        // get all fees as List<dynamic>
 //
 //       // Calculate totals
 //       double regAmount = 0;
@@ -238,7 +238,7 @@
 //
 //       if (exists == true) {
 //         final fetched = await patientService.getPatientById(userId);
-//         print('✅ Patient fetched: $fetched');
+//
 //
 //         // ✅ Check if the patient already has ongoing consultation(s)
 //         final consultations = fetched['Consultation'] as List<dynamic>? ?? [];
@@ -321,7 +321,7 @@
 //         _showSnackBar('New patient registration.');
 //       }
 //     } catch (e) {
-//       print('❌ Error fetching patient: $e');
+//
 //       _showSnackBar('Error: $e');
 //     } finally {
 //       if (mounted) setState(() => isCheckingUser = false);
@@ -494,7 +494,7 @@
 //         Navigator.pop(context, true);
 //       }
 //     } catch (e) {
-//       print('Error: $e');
+//
 //       ScaffoldMessenger.of(
 //         context,
 //       ).showSnackBar(SnackBar(content: Text('Error: $e')));

@@ -1,13 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
-import '../../../../Services/consultation_service.dart';
 import '../../../../utils/utils.dart';
-import 'DrOpDashboard/DrOutPatientQueuePage.dart';
 
 class DoctorScanPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -26,7 +25,6 @@ class DoctorScanPage extends StatefulWidget {
 class _DoctorScanPageState extends State<DoctorScanPage> {
   final TextEditingController _descriptionController = TextEditingController();
   final Set<String> selectedOptions = {};
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final Color primaryColor = const Color(0xFFBF955E);
 
   bool _isLoading = false;
@@ -167,7 +165,9 @@ class _DoctorScanPageState extends State<DoctorScanPage> {
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
-      final doctorId = await secureStorage.read(key: 'userId') ?? '';
+      final prefs = await SharedPreferences.getInstance();
+
+      final doctorId = prefs.getString('userId') ?? '';
 
       final totalAmount = _calculateTotalAmount();
 

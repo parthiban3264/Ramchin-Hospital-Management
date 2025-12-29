@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Services/admin_service.dart';
 import 'DrInPatientQueuePage.dart';
@@ -14,7 +14,6 @@ class DrOpDashboardPage extends StatefulWidget {
 }
 
 class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final Color primaryColor = const Color(0xFFBA8C50);
 
   String? hospitalName;
@@ -32,17 +31,14 @@ class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
   }
 
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      hospitalName = name ?? "Unknown Hospital";
-      hospitalPlace = place ?? "Unknown Place";
-      hospitalPhoto =
-          photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
-    });
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+    setState(() {});
   }
 
   Future<void> _loadDrOpData() async {
@@ -52,8 +48,6 @@ class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
     setState(() {
       doctorPermissionIds = perms.map<int>((e) => e as int).toList();
     });
-
-    print("Cashier Permissions Loaded: $doctorPermissionIds");
   }
 
   Future<void> _refreshPage() async {

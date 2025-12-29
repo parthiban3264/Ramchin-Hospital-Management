@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 
-import '../../Admin/Pages/AddingPage/AdminAddPage.dart';
-import '../../Administrator/Administrator_Block.dart';
-import '../../Administrator/Adminstrator_Tickets.dart';
 import 'Patient_Appointment.dart';
 import 'Patient_Scan.dart';
 import 'Patient_Tests.dart';
@@ -20,8 +16,6 @@ class PatientManage extends StatefulWidget {
 }
 
 class _PatientManageState extends State<PatientManage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   String currentDate = DateFormat('MMM dd, yyyy').format(DateTime.now());
 
   @override

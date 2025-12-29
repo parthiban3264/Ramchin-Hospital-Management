@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../Services/consultation_service.dart';
 
 const primaryColor = Color(0xFFBF955E);
@@ -60,7 +61,6 @@ class _InjectionPageState extends State<InjectionPage> {
         );
       }
     } catch (e) {
-      print("❌ Error: $e");
       if (mounted) {
         ScaffoldMessenger.of(
           context,

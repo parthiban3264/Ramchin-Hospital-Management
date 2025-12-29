@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+
+import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Doctor/doctor_service.dart';
 import '../../../../Services/consultation_service.dart';
-import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/socket_service.dart';
 
 class OutpatientQueuePage extends StatefulWidget {
@@ -111,21 +113,21 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     );
   }
 
-  bool _hasTodayConsulting(List<Map<String, dynamic>> consultations) {
-    final now = DateTime.now();
-
-    return consultations.any((c) {
-      final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
-      if (queueStatus != 'drqueue' && queueStatus != 'ongoing') return false;
-
-      final createdAt = DateTime.tryParse(c['createdAt'] ?? '');
-      if (createdAt == null) return false;
-
-      return createdAt.year == now.year &&
-          createdAt.month == now.month &&
-          createdAt.day == now.day;
-    });
-  }
+  // bool _hasTodayConsulting(List<Map<String, dynamic>> consultations) {
+  //   final now = DateTime.now();
+  //
+  //   return consultations.any((c) {
+  //     final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+  //     if (queueStatus != 'drqueue' && queueStatus != 'ongoing') return false;
+  //
+  //     final createdAt = DateTime.tryParse(c['createdAt'] ?? '');
+  //     if (createdAt == null) return false;
+  //
+  //     return createdAt.year == now.year &&
+  //         createdAt.month == now.month &&
+  //         createdAt.day == now.day;
+  //   });
+  // }
 
   DateTime? _parseCreatedAt(String? dateStr) {
     if (dateStr == null) return null;
@@ -367,7 +369,6 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
       });
     } catch (e) {
       if (firstLoad) setState(() => isInitialLoading = false);
-      //print('Error fetching consultations: $e');
     }
   }
 
@@ -519,7 +520,6 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     Color accentColor,
     List<Map<String, dynamic>> doctors,
   ) {
-    //print('item: $item');
     final patient = item['Patient'] ?? {};
 
     final phone = patient['phone']?['mobile'] ?? '-';
@@ -530,7 +530,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     );
 
     final drName = selectedDoctor['name'];
-    print(selectedDoctor);
+
     final specialist = selectedDoctor['department'];
 
     final address = patient['address']?['Address'] ?? '-';
@@ -607,7 +607,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                       color: const Color(0xFFFFF3F3),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.redAccent.withOpacity(0.35),
+                        color: Colors.redAccent.withValues(alpha: 0.35),
                         width: 1,
                       ),
                     ),
@@ -618,7 +618,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.redAccent.withOpacity(0.15),
+                            color: Colors.redAccent.withValues(alpha: 0.15),
                           ),
                           child: const Icon(
                             Icons.cancel_rounded,
@@ -1129,16 +1129,21 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                                 ),
                               ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filteredQueue.length,
-                        itemBuilder: (context, index) {
-                          return _consultationCard(
-                            filteredQueue[index],
-                            accentColor,
-                            doctors,
-                          );
-                        },
+                    : Center(
+                        child: Container(
+                          constraints: BoxConstraints(maxWidth: 600),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: filteredQueue.length,
+                            itemBuilder: (context, index) {
+                              return _consultationCard(
+                                filteredQueue[index],
+                                accentColor,
+                                doctors,
+                              );
+                            },
+                          ),
+                        ),
                       ),
               ),
             ],

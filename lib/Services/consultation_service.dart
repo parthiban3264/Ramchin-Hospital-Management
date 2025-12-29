@@ -1,14 +1,14 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class ConsultationService {
-  static FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   static Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -20,13 +20,12 @@ class ConsultationService {
     Map<String, dynamic> data,
   ) async {
     try {
-      print(data);
       final response = await http.post(
         Uri.parse('$baseUrl/consultations/create'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
@@ -79,7 +78,7 @@ class ConsultationService {
         } else {
           throw Exception('Unexpected JSON structure: $decoded');
         }
-        print(response.body);
+
         return rawList;
       } else {
         throw Exception('Failed to fetch consultations: ${response.body}');
@@ -99,7 +98,7 @@ class ConsultationService {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -117,7 +116,7 @@ class ConsultationService {
   static Future<List<dynamic>> getAllReceptionConsultations() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/consultations/all'));
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 
@@ -157,12 +156,11 @@ class ConsultationService {
   // Future<List<dynamic>> getAllConsultation() async {
   //   try {
   //     final hospitalId = await getHospitalId();
-  //     print(hospitalId);
+  //
   //     final response = await http.get(
   //       Uri.parse('$baseUrl/consultations/all/$hospitalId'),
   //     );
-  //     print(response);
-  //     print(response.body);
+  //
   //
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       final decoded = jsonDecode(response.body);
@@ -200,7 +198,7 @@ class ConsultationService {
   //
   //       return symptoms;
   //     } else {
-  //       print('Failed to fetch symptoms: ${response.body}');
+  //
   //       throw Exception('Failed to fetch symptoms: ${response.body}');
   //     }
   //   } catch (e) {
@@ -273,12 +271,10 @@ class ConsultationService {
   Future<List<dynamic>> getAllDrConsultation() async {
     try {
       final hospitalId = await getHospitalId();
-      print(hospitalId);
+
       final response = await http.get(
         Uri.parse('$baseUrl/consultations/all/$hospitalId'),
       );
-      print(response);
-      print(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
@@ -323,7 +319,6 @@ class ConsultationService {
 
         return symptoms;
       } else {
-        print('Failed to fetch symptoms: ${response.body}');
         throw Exception('Failed to fetch symptoms: ${response.body}');
       }
     } catch (e) {
@@ -412,21 +407,16 @@ class ConsultationService {
     );
 
     if (response.statusCode == 200) {
-      print('✅ Queue status updated!');
-    } else {
-      print('❌ Error: ${response.body}');
-    }
+    } else {}
   }
 
   static Future<List<dynamic>> getAllConsultationByMedical(int? mode) async {
     try {
       final hospitalId = await getHospitalId();
-      print(hospitalId);
+
       final response = await http.get(
         Uri.parse('$baseUrl/consultations/all/ByMedical/$hospitalId/$mode'),
       );
-      print(response);
-      print(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
@@ -442,7 +432,6 @@ class ConsultationService {
 
         return rawList;
       } else {
-        print('Failed to fetch symptoms: ${response.body}');
         throw Exception('Failed to fetch symptoms: ${response.body}');
       }
     } catch (e) {
@@ -455,8 +444,6 @@ class ConsultationService {
   //     final response = await http.get(
   //       Uri.parse('$baseUrl/consultations/getById/$id'),
   //     );
-  //     print(response);
-  //     print(response.body);
   //
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       final decoded = jsonDecode(response.body);
@@ -472,7 +459,7 @@ class ConsultationService {
   //
   //       return rawList;
   //     } else {
-  //       print('Failed to fetch symptoms: ${response.body}');
+  //
   //       throw Exception('Failed to fetch symptoms: ${response.body}');
   //     }
   //   } catch (e) {

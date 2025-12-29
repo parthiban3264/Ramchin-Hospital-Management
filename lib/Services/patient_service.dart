@@ -96,19 +96,19 @@
 // }
 
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class PatientService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   PatientService();
 
   /// Helper function to get hospitalId from secure storage
   Future<String> _getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in secure storage.');
     }
@@ -125,7 +125,6 @@ class PatientService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({...data, 'hospital_Id': int.parse(hospitalId)}),
     );
-    print(jsonEncode({...data, 'hospital_Id': int.parse(hospitalId)}));
 
     return _handleResponse(response);
   }
@@ -144,7 +143,6 @@ class PatientService {
 
     final url = Uri.parse('$baseUrl/patients/get/$hospitalId/$userId');
     final response = await http.get(url);
-    print(response.body);
 
     return _handleResponse(response);
   }
@@ -155,7 +153,6 @@ class PatientService {
   //   final response = await http.get(
   //     Uri.parse('$baseUrl/patients/get/check/$hospitalId/$userId'),
   //   );
-  //   print(response.body);
   //
   //   final json = jsonDecode(response.body);
   //   if (json['status'] == 'success' && json['data'] != null) {
@@ -170,8 +167,6 @@ class PatientService {
     final response = await http.get(
       Uri.parse('$baseUrl/patients/get/check/$hospitalId/$userId'),
     );
-
-    print(response.body);
 
     final json = jsonDecode(response.body);
     if (json['status'] == 'success' && json['data'] != null) {
@@ -188,17 +183,15 @@ class PatientService {
     String userId,
     Map<String, dynamic> data,
   ) async {
-    print('$userId :: $data');
     final hospitalId = await _getHospitalId();
 
     final url = Uri.parse('$baseUrl/patients/update/$hospitalId/$userId');
-    print(url.toString());
+
     final response = await http.patch(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
-    print(response.body);
 
     return _handleResponse(response);
   }

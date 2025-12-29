@@ -1,17 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
-import 'package:image_picker/image_picker.dart';
-
-import '../../../Widgets/global_notifiers.dart';
-import '../Queue/X-RayQueuePage.dart';
 import '../Report/ScanReportPage.dart';
 
 class AbdomenPage extends StatefulWidget {
@@ -28,7 +25,6 @@ class AbdomenPage extends StatefulWidget {
 
 class _AbdomenPageState extends State<AbdomenPage>
     with SingleTickerProviderStateMixin {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final socketService = SocketService();
   final Color primaryColor = const Color(0xFFBF955E);
   bool _isPatientExpanded = false;
@@ -36,7 +32,7 @@ class _AbdomenPageState extends State<AbdomenPage>
   bool _isLoading = false; // <-- Add this to your State class
   String? _dateTime;
   // File? _pickedImage;
-  List<File> _pickedImages = [];
+  final List<File> _pickedImages = [];
   Map<String, TextEditingController> noteControllers = {};
   bool _isCompleted = false;
   String? logo;
@@ -72,7 +68,8 @@ class _AbdomenPageState extends State<AbdomenPage>
   }
 
   void _loadHospitalLogo() async {
-    logo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
+    logo = prefs.getString('hospitalPhoto');
     setState(() {});
   }
 
@@ -163,7 +160,9 @@ class _AbdomenPageState extends State<AbdomenPage>
 
     try {
       final Id = widget.record['id'];
-      final Staff_Id = await secureStorage.read(key: 'userId');
+      final prefs = await SharedPreferences.getInstance();
+
+      final Staff_Id = prefs.getString('userId');
       final patient = widget.record['Patient'] ?? {};
       final consultationList = patient['Consultation'] ?? [];
 
@@ -220,7 +219,6 @@ class _AbdomenPageState extends State<AbdomenPage>
           ? widget.record['consulateId']
           : null;
 
-      print("Consultation ID: $consultationId");
       final Id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
       await TestingScanningService().updateTesting(Id, {'status': 'COMPLETED'});
@@ -255,8 +253,6 @@ class _AbdomenPageState extends State<AbdomenPage>
 
   @override
   Widget build(BuildContext context) {
-    print('records : ${widget.record}');
-    print('_currentRecord:$_currentRecord');
     final record = widget.record;
     final patient = record['Patient'] ?? {};
     // final phone = patient['phone']?['mobile'] ?? 'N/A';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../Pages/NotificationsPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Services/admin_service.dart';
 
 class ActiveStaffPage extends StatefulWidget {
@@ -12,7 +12,6 @@ class ActiveStaffPage extends StatefulWidget {
 
 class _ActiveStaffPageState extends State<ActiveStaffPage> {
   final AdminService service = AdminService();
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
 
   List<dynamic> staffList = [];
   List<dynamic> filteredList = [];
@@ -71,19 +70,21 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
 
     await service.updateStatus(id, newStatus);
 
-    String statusText = newStatus ? "ACTIVE" : "INACTIVE";
+    final prefs = await SharedPreferences.getInstance();
+    final String statusText = newStatus ? "ACTIVE" : "INACTIVE";
 
-    await storage.write(key: "staffStatus", value: statusText);
-    // Update the single staff item inside both lists
+    await prefs.setString("staffStatus", statusText);
+
     setState(() {
       for (var s in staffList) {
         if (s["id"] == id) {
-          s["status"] = newStatus ? "ACTIVE" : "INACTIVE";
+          s["status"] = statusText;
         }
       }
+
       for (var s in filteredList) {
         if (s["id"] == id) {
-          s["status"] = newStatus ? "ACTIVE" : "INACTIVE";
+          s["status"] = statusText;
         }
       }
 
@@ -182,7 +183,6 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
                   icon: Icon(Icons.search, color: Colors.grey),
 
                   hintText: "Search by Name, ID, or Role...",
-
                 ),
               ),
             ),
@@ -272,7 +272,6 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-
                                     "Role: ${staff['role']}",
 
                                     maxLines: 1,

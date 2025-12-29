@@ -1,13 +1,12 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class PaymentService {
   // e.g., 'http://localhost:3000/payments'
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   PaymentService();
 
@@ -20,11 +19,10 @@ class PaymentService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
-    print(response.body);
+
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      print('Error creating payment: ${response.body}');
       return null;
     }
   }
@@ -34,7 +32,7 @@ class PaymentService {
     final response = await http.get(
       Uri.parse('$baseUrl/payments/all/$hospitalId'),
     );
-    print(response.body);
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
       if (jsonResponse.containsKey('data') && jsonResponse['data'] is List) {
@@ -53,7 +51,6 @@ class PaymentService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      print('Payment not found: ${response.body}');
       return null;
     }
   }
@@ -64,14 +61,14 @@ class PaymentService {
     Map<String, dynamic> updates,
   ) async {
     try {
-      final hospitalId = await getHospitalId();
-      print(updates);
+      // final hospitalId = await getHospitalId();
+
       final response = await http.patch(
         Uri.parse('$baseUrl/payments/updateById/$paymentId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(updates),
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 
@@ -82,17 +79,16 @@ class PaymentService {
           throw Exception('Unexpected response format');
         }
       } else {
-        print('❌ Error updating payment: ${response.body}');
         return null;
       }
     } catch (e) {
-      print('⚠️ Exception in updatePayment: $e');
       return null;
     }
   }
 
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -105,7 +101,7 @@ class PaymentService {
       final response = await http.get(
         Uri.parse('$baseUrl/payments/all/pending/$hospitalId'),
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 
@@ -149,7 +145,6 @@ class PaymentService {
   //       final response = await http.get(
   //         Uri.parse('$baseUrl/payments/all/paid/$hospitalId'),
   //       );
-  //       print(response.body);
   //
   //       if (response.statusCode == 200 || response.statusCode == 201) {
   //         final decoded = jsonDecode(response.body);

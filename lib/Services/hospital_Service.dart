@@ -1,15 +1,15 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class HospitalService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -17,7 +17,9 @@ class HospitalService {
   }
 
   Future<String> getPatientId() async {
-    final hospitalId = await secureStorage.read(key: 'userId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final hospitalId = prefs.getString('userId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('userId ID not found in storage');
     }
@@ -46,7 +48,6 @@ class HospitalService {
     required String mail,
     required XFile file,
   }) async {
-    print(hospitalId);
     var url = Uri.parse("$baseUrl/hospitals/create");
 
     var request = http.MultipartRequest("POST", url);
@@ -62,7 +63,7 @@ class HospitalService {
 
     var response = await request.send();
     var responseBody = await response.stream.bytesToString();
-    print(responseBody);
+
     return {
       "status": response.statusCode == 201 ? "success" : "error",
       "body": responseBody,
@@ -87,7 +88,7 @@ class HospitalService {
     final hospitalId = await getHospitalId();
     final url = Uri.parse("$baseUrl/hospitals/getById/$hospitalId");
     final res = await http.get(url);
-    // print('service: ${res.body}');
+
     if (res.statusCode == 200) {
       final body = jsonDecode(res.body);
 
@@ -113,7 +114,6 @@ class HospitalService {
 
     if (res.statusCode == 200 || res.statusCode == 201) {
       final body = jsonDecode(res.body);
-      print(res.body);
 
       // Ensure we always return a Map
       if (body["data"] is Map<String, dynamic>) {
@@ -162,9 +162,7 @@ class HospitalService {
     }
 
     var response = await request.send();
-    print(
-      jsonDecode(await response.stream.bytesToString()),
-    ); // <-- prints StreamedResponse
+
     return response.statusCode == 200;
   }
 

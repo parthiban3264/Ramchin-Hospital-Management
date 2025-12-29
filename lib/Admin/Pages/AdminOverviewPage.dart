@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Services/consultation_service.dart';
 import '../../../Services/testing&scanning_service.dart';
 
@@ -35,7 +35,6 @@ class AdminOverviewPage extends StatefulWidget {
 }
 
 class _AdminOverviewPageState extends State<AdminOverviewPage> {
-  final secureStorage = const FlutterSecureStorage();
   final ConsultationService _consultationService = ConsultationService();
   final TestingScanningService _testingService = TestingScanningService();
 
@@ -79,17 +78,14 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
   }
 
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      hospitalName = name ?? "Unknown Hospital";
-      hospitalPlace = place ?? "Unknown Place";
-      hospitalPhoto =
-          photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
-    });
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+    setState(() {});
   }
 
   bool isToday(String? dateString) {
@@ -528,7 +524,13 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
   );
 
   Widget _buildGrid(List<Widget> cards) => GridView.count(
-    crossAxisCount: 2,
+    crossAxisCount: MediaQuery.sizeOf(context).width > 800
+        ? 5
+        : MediaQuery.sizeOf(context).width > 650
+        ? 4
+        : MediaQuery.sizeOf(context).width > 500
+        ? 3
+        : 2,
     crossAxisSpacing: 16,
     mainAxisSpacing: 16,
     shrinkWrap: true,
@@ -553,24 +555,23 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: customGold, size: 28),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: cardTitleStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                title,
+                style: cardTitleStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
-          const Spacer(),
-          Center(child: Text(value, style: cardValueStyle)),
+          const SizedBox(height: 8),
+          Text(value, style: cardValueStyle),
         ],
       ),
     );

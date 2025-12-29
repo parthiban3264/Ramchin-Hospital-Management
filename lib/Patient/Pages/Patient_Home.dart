@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../Pages/DashboardPages/patient_dashboard.dart';
 
 class PatientHome extends StatefulWidget {
@@ -125,7 +126,6 @@ class _PatientHomeState extends State<PatientHome> {
       // Compare ONLY day & month (ignore year mismatch)
       return dt.day == now.day && dt.month == now.month;
     } catch (e) {
-      debugPrint("Error parsing createdAt: $e");
       return false;
     }
   }
@@ -134,7 +134,7 @@ class _PatientHomeState extends State<PatientHome> {
     final List<Map<String, dynamic>> out = [];
     for (var r in raw) {
       if (r is! Map) continue;
-      debugPrint('Medication createdAt: ${r['createdAt']}');
+
       if (!isCreatedToday(r)) continue;
       final name = getItemName(r, type);
       final qty = getQty(r, type);
@@ -267,8 +267,6 @@ class _PatientHomeState extends State<PatientHome> {
 
     final now = DateTime.now();
     final hour = now.hour;
-    print(now);
-    print(hour);
 
     // bool showMorning =
     //     hour < 11 &&

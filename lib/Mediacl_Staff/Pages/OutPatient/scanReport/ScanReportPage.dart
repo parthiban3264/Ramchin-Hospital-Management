@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
-import 'package:printing/printing.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class ScanReportCard extends StatelessWidget {
   final Map<String, dynamic> scanData;
@@ -18,7 +18,6 @@ class ScanReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('ggg $scanData');
     final patient = scanData["Patient"];
 
     // Pick first non-test item (like a scan)
@@ -119,10 +118,7 @@ class ScanReportCard extends StatelessWidget {
               seen.add(key);
               options.add(Map<String, dynamic>.from(opt));
             }
-          } else {
-            // debug: uncomment to log skipped entries
-            // print('SKIP options entry (invalid selectedOption): ${opt}');
-          }
+          } else {}
         }
       }
 
@@ -138,10 +134,7 @@ class ScanReportCard extends StatelessWidget {
               seen.add(key);
               options.add(Map<String, dynamic>.from(opt));
             }
-          } else {
-            // debug: uncomment to log skipped entries
-            // print('SKIP selectedOptions entry (invalid selectedOption): ${opt}');
-          }
+          } else {}
         }
       }
     }

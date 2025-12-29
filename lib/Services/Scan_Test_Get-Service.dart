@@ -1,15 +1,15 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class ScanTestGetService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -23,7 +23,7 @@ class ScanTestGetService {
     final response = await http.get(
       Uri.parse('$baseUrl/scans_tests/all/$hospitalId/$type'),
     );
-    print(response.body);
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.cast<Map<String, dynamic>>();
@@ -32,14 +32,13 @@ class ScanTestGetService {
     }
   }
 
-
   Future<List<Map<String, dynamic>>> fetchTestAndScan(String type) async {
     final hospitalId = await getHospitalId();
 
     final response = await http.get(
       Uri.parse('$baseUrl/scans_tests/all/$hospitalId/$type'),
     );
-    print(response.body);
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.cast<Map<String, dynamic>>();
@@ -62,14 +61,14 @@ class ScanTestGetService {
 
   // Future<Map<String, dynamic>> createTestScan(Map<String, dynamic> data) async {
   //   final url = Uri.parse('$baseUrl/scan_test/create');
-  //   print('Creating scan_test with data: $data');
+  //
   //   try {
   //     final response = await http.post(
   //       url,
   //       headers: {'Content-Type': 'application/json'},
   //       body: jsonEncode(data),
   //     );
-  //     print(response.body);
+  //
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       return jsonDecode(response.body);
   //     } else {
@@ -85,12 +84,11 @@ class ScanTestGetService {
   Future<Map<String, dynamic>> createTestScan(
     List<Map<String, dynamic>> data,
   ) async {
-    print('Creating scan_test with data: $data');
     final url = Uri.parse('$baseUrl/scans_tests/create');
-// =======
-//   Future<Map<String, dynamic>> createTestScan(Map<String, dynamic> data) async {
-//     final url = Uri.parse('$baseUrl/scan_test/create');
-// >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
+    // =======
+    //   Future<Map<String, dynamic>> createTestScan(Map<String, dynamic> data) async {
+    //     final url = Uri.parse('$baseUrl/scan_test/create');
+    // >>>>>>> 3f063fbf1fae91f45feca0bca76a410ab6083f20
 
     try {
       final response = await http.post(
@@ -99,21 +97,22 @@ class ScanTestGetService {
 
         body: jsonEncode(data), // sending ARRAY
       );
-      print(' response ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
         throw Exception(response.body);
       }
     } catch (e) {
-      print(e);
       return {'status': 'failed', 'error': e.toString()};
     }
   }
 
   /// ---------------- HEADERS ----------------
   Future<Map<String, String>> _headers() async {
-    final token = await secureStorage.read(key: 'token');
+    final prefs = await SharedPreferences.getInstance();
+
+    final token = prefs.getString('token');
     return {
       "Content-Type": "application/json",
       "Authorization": "Bearer $token",
@@ -135,13 +134,13 @@ class ScanTestGetService {
 
   // /// ---------------- UPDATE ----------------
   // Future<void> updateScanTest(int id, Map<String, dynamic> data) async {
-  //   print('updateScanTest $data');
+  //
   //   final response = await http.patch(
   //     Uri.parse("$baseUrl/scan-test/updateById/$id"),
   //     headers: await _headers(),
   //     body: jsonEncode(data),
   //   );
-  //   print('updateScanTest ${response.body}');
+  //
   //   if (response.statusCode != 200) {
   //     throw Exception("Failed to update scan/test");
   //   }
@@ -152,8 +151,6 @@ class ScanTestGetService {
       headers: await _headers(),
       body: jsonEncode(data),
     );
-    print('updateScanTest $data');
-    print('updateScanTest ${response.body}');
 
     if (response.statusCode != 200) {
       throw Exception("Failed to update scan/test");
@@ -162,12 +159,12 @@ class ScanTestGetService {
 
   /// ---------------- DELETE ----------------
   // Future<void> deleteScanTest(int id) async {
-  //   print('deleteScanTest $id');
+  //
   //   final response = await http.delete(
   //     Uri.parse("$baseUrl/scan-test/deleteById/$id"),
   //     headers: await _headers(),
   //   );
-  //   print(response.body);
+  //
   //   if (response.statusCode != 200) {
   //     throw Exception("Failed to delete scan/test");
   //   }
@@ -182,5 +179,4 @@ class ScanTestGetService {
       throw Exception("Failed to delete scan/test");
     }
   }
-
 }

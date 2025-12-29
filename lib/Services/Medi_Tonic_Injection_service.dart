@@ -1,13 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../utils/utils.dart';
 
 class MedicineTonicInjectionService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   /// Create a Testing/Scanning record
   Future<void> createMediTonicInj(Map<String, dynamic> data) async {
     final url = Uri.parse('$baseUrl/medicine_tonic_injection/create');
@@ -16,7 +13,7 @@ class MedicineTonicInjectionService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
-    print(response.body);
+
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception('Failed to create testing/scanning: ${response.body}');
     }
@@ -44,7 +41,6 @@ class MedicineTonicInjectionService {
         );
       }
     } catch (e) {
-      print("❌ Error updating record: $e");
       rethrow;
     }
   }

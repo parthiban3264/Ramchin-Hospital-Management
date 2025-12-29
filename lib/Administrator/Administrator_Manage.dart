@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
-import '../Admin/Pages/AddingPage/AdminAddPage.dart';
+
 import 'Administartor_EditHospital.dart';
 import 'Administrator_AddPage.dart';
 import 'Administrator_Block.dart';
@@ -22,8 +21,6 @@ class AdministratorManagePage extends StatefulWidget {
 }
 
 class _AdministratorManagePageState extends State<AdministratorManagePage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   String currentDate = DateFormat('MMM dd, yyyy').format(DateTime.now());
 
   @override

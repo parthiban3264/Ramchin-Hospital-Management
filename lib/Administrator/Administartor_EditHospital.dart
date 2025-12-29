@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../Pages/NotificationsPage.dart';
 import '../Services/hospital_Service.dart';
 
@@ -123,7 +125,7 @@ class _AdministratorEditHospitalState extends State<AdministratorEditHospital> {
       "file": _pickedImage, // NEW IMAGE
       "oldImage": widget.hospitalData["photo"], // OLD IMAGE URL
     };
-    // print('hospi ${widget.hospitalData["id"]}');
+
     bool success = await hospitalService.updateHospital(
       widget.hospitalData["id"],
       updatedData,

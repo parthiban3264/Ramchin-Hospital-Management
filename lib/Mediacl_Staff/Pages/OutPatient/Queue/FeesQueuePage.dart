@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/payment_service.dart';
 import '../Page/PaymentPage.dart';
@@ -151,7 +152,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -192,292 +193,302 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          if (_currentIndex == 1)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 600),
+          child: Column(
+            children: [
+              if (_currentIndex == 1)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
                     children: [
-                      FilterButton(
-                        label: 'Today',
-                        selected: historyFilter == 'Today',
-                        onTap: () {
-                          setState(() {
-                            historyFilter = 'Today';
-                            _applyHistoryFilter();
-                          });
-                        },
-                      ),
-                      FilterButton(
-                        label: 'Month',
-                        selected: historyFilter == 'Month',
-                        onTap: () {
-                          setState(() {
-                            historyFilter = 'Month';
-                            _applyHistoryFilter();
-                          });
-                        },
-                      ),
-                      FilterButton(
-                        label: 'Overall',
-                        selected: historyFilter == 'Overall',
-                        onTap: () {
-                          setState(() {
-                            historyFilter = 'Overall';
-                            _applyHistoryFilter();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10.0,
-                            vertical: 6.0,
-                          ),
-                          child: TextField(
-                            cursorColor: Color(0xFFBF955E),
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: "Search by Name or User ID",
-                              prefixIcon: const Icon(Icons.search),
-
-                              // Rounded border
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-
-                              // Focused border prettier
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFBF955E),
-                                  width: 2,
-                                ),
-                              ),
-
-                              // Enabled border
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                            onChanged: (_) {
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          FilterButton(
+                            label: 'Today',
+                            selected: historyFilter == 'Today',
+                            onTap: () {
                               setState(() {
+                                historyFilter = 'Today';
                                 _applyHistoryFilter();
                               });
                             },
                           ),
-                        ),
+                          FilterButton(
+                            label: 'Month',
+                            selected: historyFilter == 'Month',
+                            onTap: () {
+                              setState(() {
+                                historyFilter = 'Month';
+                                _applyHistoryFilter();
+                              });
+                            },
+                          ),
+                          FilterButton(
+                            label: 'Overall',
+                            selected: historyFilter == 'Overall',
+                            onTap: () {
+                              setState(() {
+                                historyFilter = 'Overall';
+                                _applyHistoryFilter();
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10.0,
+                                vertical: 6.0,
+                              ),
+                              child: TextField(
+                                cursorColor: Color(0xFFBF955E),
+                                controller: searchController,
+                                decoration: InputDecoration(
+                                  hintText: "Search by Name or User ID",
+                                  prefixIcon: const Icon(Icons.search),
+
+                                  // Rounded border
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+
+                                  // Focused border prettier
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFFBF955E),
+                                      width: 2,
+                                    ),
+                                  ),
+
+                                  // Enabled border
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                ),
+                                onChanged: (_) {
+                                  setState(() {
+                                    _applyHistoryFilter();
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          Expanded(
-            child: FutureBuilder<List<dynamic>>(
-              future: _feesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: Lottie.asset(
-                        'assets/Lottie/error404.json',
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      ),
-                    ),
-                  );
-                } else if (_currentIndex == 1 && _historyFees.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      '📜 No Payment History Available!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                } else if (_currentIndex == 0 && _queueFees.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      '🎉 No Pending Fees!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                } else {
-                  final data = _currentIndex == 0 ? _queueFees : _historyFees;
-                  return ListView.builder(
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final item = data[index];
-                      final patient = item['Patient'] ?? {};
-
-                      return GestureDetector(
-                        onTap: () async {
-                          // if (_currentIndex == 1) return;
-
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => FeesPaymentPage(
-                                fee: item,
-                                patient: patient,
-                                index: _currentIndex,
-                              ),
-                            ),
-                          );
-
-                          if (result == true) {
-                            _loadFees();
-                          }
-                        },
-                        child: Card(
-                          color: Colors.white,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 8,
-                          shadowColor: themeColor.withOpacity(0.5),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Center(
-                                  child: Text(
-                                    item['reason'] ?? 'Unknown Fee',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(thickness: 1),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Patient: ${getString(patient['name'])}',
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    Text(
-                                      'AGE: ${calculateAge(getString(patient['dob']))}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'ID: ${getString(patient['id'])}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    Text(
-                                      'DOB: ${formatDob(getString(patient['dob']))}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Address: ${getString(patient['address']?['Address'])}',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(thickness: 1),
-                                const SizedBox(height: 8),
-
-                                Center(
-                                  child: Text(
-                                    'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFBF955E),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                if (_currentIndex == 1) ...[
-                                  Row(
-                                    children: [
-                                      Center(
-                                        child: Text(
-                                          '${getFormattedDate(item['updatedAt'])}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade800,
-                                          ),
-                                        ),
-                                      ),
-                                      Spacer(),
-                                      Text(
-                                        'Paid',
-                                        style: TextStyle(color: Colors.black),
-                                      ),
-                                      SizedBox(width: 5),
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: Colors.green,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
+                ),
+              Expanded(
+                child: FutureBuilder<List<dynamic>>(
+                  future: _feesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: double.infinity,
+                          child: Lottie.asset(
+                            'assets/Lottie/error404.json',
+                            fit: BoxFit.contain,
+                            repeat: true,
                           ),
                         ),
                       );
-                    },
-                  );
-                }
-              },
-            ),
+                    } else if (_currentIndex == 1 && _historyFees.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          '📜 No Payment History Available!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    } else if (_currentIndex == 0 && _queueFees.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          '🎉 No Pending Fees!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    } else {
+                      final data = _currentIndex == 0
+                          ? _queueFees
+                          : _historyFees;
+                      return ListView.builder(
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final item = data[index];
+                          final patient = item['Patient'] ?? {};
+
+                          return GestureDetector(
+                            onTap: () async {
+                              // if (_currentIndex == 1) return;
+
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FeesPaymentPage(
+                                    fee: item,
+                                    patient: patient,
+                                    index: _currentIndex,
+                                  ),
+                                ),
+                              );
+
+                              if (result == true) {
+                                _loadFees();
+                              }
+                            },
+                            child: Card(
+                              color: Colors.white,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 8,
+                              shadowColor: themeColor.withValues(alpha: 0.5),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        item['reason'] ?? 'Unknown Fee',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Divider(thickness: 1),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Patient: ${getString(patient['name'])}',
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                        Text(
+                                          'AGE: ${calculateAge(getString(patient['dob']))}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'ID: ${getString(patient['id'])}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                        Text(
+                                          'DOB: ${formatDob(getString(patient['dob']))}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Address: ${getString(patient['address']?['Address'])}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Divider(thickness: 1),
+                                    const SizedBox(height: 8),
+
+                                    Center(
+                                      child: Text(
+                                        'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFBF955E),
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 6),
+
+                                    if (_currentIndex == 1) ...[
+                                      Row(
+                                        children: [
+                                          Center(
+                                            child: Text(
+                                              '${getFormattedDate(item['updatedAt'])}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade800,
+                                              ),
+                                            ),
+                                          ),
+                                          Spacer(),
+                                          Text(
+                                            'Paid',
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          SizedBox(width: 5),
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

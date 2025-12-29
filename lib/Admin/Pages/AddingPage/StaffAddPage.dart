@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-
-import 'package:flutter/services.dart';
-
 import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/admin_service.dart';
@@ -51,7 +51,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
     loadDoctorData();
   }
 
-
   final List<String> designation = [
     "Doctor",
     "Nurse",
@@ -71,10 +70,8 @@ class _AddStaffPageState extends State<AddStaffPage> {
     'NON-MEDICAL STAFF',
   ];
 
-
   // final List<String> roles = ["Doctor", "Nurse", "Admin", "Staff"];
   final List<String> genders = ["Male", "Female", "Other"];
-
 
   List<String> doctorNames = [];
   Map<String, String> doctorIdByName = {};
@@ -177,8 +174,7 @@ class _AddStaffPageState extends State<AddStaffPage> {
 
       setState(() {});
     } catch (e) {
-      print(e);
-
+      setState(() {});
     }
   }
 
@@ -188,9 +184,9 @@ class _AddStaffPageState extends State<AddStaffPage> {
     setState(() => _isLoading = true); // 🔹 Show loading spinner
 
     try {
-      final hospitalId = await storage.read(key: 'hospitalId');
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId');
 
-      // Determine proper userId
       final String userIdToSave = userIdController.text.trim().isEmpty
           ? phoneController.text.trim()
           : userIdController.text.trim();
@@ -253,7 +249,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
           ),
         );
       }
-
     } finally {
       setState(() => _isLoading = false); // 🔹 Hide loading spinner
     }
@@ -280,7 +275,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
             ),
             boxShadow: [
               BoxShadow(
-
                 color: Colors.black.withValues(alpha: 0.15),
 
                 blurRadius: 6,
@@ -393,6 +387,7 @@ class _AddStaffPageState extends State<AddStaffPage> {
                   ),
 
                   const SizedBox(height: 2),
+
                   // _buildTextField(
                   //   controller: phoneController,
                   //   label: "Phone *",
@@ -403,7 +398,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
                   //   maxLength: 10,
                   //   digitsOnly: true,
                   // ),
-
                   _buildTextField(
                     controller: phoneController,
                     label: "Phone *",
@@ -486,7 +480,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
 
                   const SizedBox(height: 2),
 
-
                   _buildDropdown(
                     value: selectedGender,
                     label: "Gender *",
@@ -494,20 +487,17 @@ class _AddStaffPageState extends State<AddStaffPage> {
                     color: gold,
                     items: genders,
 
-
                     //onChanged: (val) => setState(() => selectedGender = val),
                     onChanged: (val) {
                       setState(() => selectedGender = val);
                       _validateForm(); // immediately update button
                     },
-
                   ),
+
                   // const SizedBox(height: 24),
                   //
                   // const Divider(thickness: 1.2, color: Color(0xFFE0E0E0)),
-
                   const SizedBox(height: 2),
-
 
                   // Text(
                   //   "Professional Information",
@@ -528,7 +518,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
                   // const SizedBox(height: 16),
                   //
                   _buildDropdown(
-
                     value: selectedRole,
                     label: "Role *",
                     icon: Icons.account_tree_outlined,
@@ -650,7 +639,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
                   // const Divider(thickness: 1.2, color: Color(0xFFE0E0E0)),
                   const SizedBox(height: 2),
 
-
                   // Text(
                   //   "Contact Information",
                   //   style: TextStyle(
@@ -671,7 +659,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
                             (_userIdError?.isNotEmpty ?? false))
                         ? null
                         : _saveUser,
-
 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: gold,
@@ -732,7 +719,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
     void Function(String)? onFieldSubmitted,
     void Function(String)? onChanged,
     Widget? suffixIcon,
-
   }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -743,7 +729,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-
             color: Colors.black.withValues(alpha: 0.16),
 
             blurRadius: 10,
@@ -770,7 +755,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
         ],
 
         // 🆕 callbacks
-
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -791,9 +775,7 @@ class _AddStaffPageState extends State<AddStaffPage> {
             child: Icon(icon, color: color, size: 22),
           ),
 
-
           suffixIcon: suffixIcon, // 🆕 here
-
 
           prefixIconConstraints: const BoxConstraints(
             minWidth: 40,
@@ -819,13 +801,10 @@ class _AddStaffPageState extends State<AddStaffPage> {
             borderSide: BorderSide(color: color, width: 2),
           ),
 
-
-
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
             vertical: 16,
           ),
-
 
           counterText: "",
         ),
@@ -846,7 +825,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
             if (!emailRegex.hasMatch(value.trim())) {
               return "Enter a valid email address";
             }
-
           }
           return null;
         },
@@ -871,7 +849,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-
             color: Colors.black.withValues(alpha: 0.06),
 
             blurRadius: 8,
@@ -936,7 +913,6 @@ class _AddStaffPageState extends State<AddStaffPage> {
   }
 }
 
-
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -949,4 +925,3 @@ class UpperCaseTextFormatter extends TextInputFormatter {
     );
   }
 }
-

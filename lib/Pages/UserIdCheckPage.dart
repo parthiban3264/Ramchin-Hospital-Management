@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../Services/patient_service.dart';
 import '../Mediacl_Staff/Pages/OutPatient/PatientRegistrationPage.dart';
+import '../Services/patient_service.dart';
 import 'DrawerPages/ReceptionDeskPage.dart';
 
 const Color customGold = Color(0xFFBF955E);
@@ -41,7 +41,7 @@ class _UserIdCheckPageState extends State<UserIdCheckPage> {
       final nextPage = registered
           ? ReceptionDeskPage(UserId: userId)
           : PatientRegistrationPage();
-      print(userId);
+
       if (mounted) {
         Navigator.pushReplacement(
           context,

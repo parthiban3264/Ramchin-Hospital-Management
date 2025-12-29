@@ -1,16 +1,16 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class TonicService {
   TonicService();
 
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   Future<String> getHospitalId() async {
-    final hospitalId = await secureStorage.read(key: 'hospitalId');
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     if (hospitalId == null || hospitalId.isEmpty) {
       throw Exception('Hospital ID not found in storage');
     }
@@ -29,11 +29,9 @@ class TonicService {
         final data = json.decode(response.body);
         return data as Map<String, dynamic>?;
       } else {
-        print('Error fetching medicine: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Exception fetching medicine: $e');
       return null;
     }
   }
@@ -44,15 +42,11 @@ class TonicService {
 
     try {
       final hospitalId = await getHospitalId();
-      print('Hospital ID: $hospitalId');
-      print('Query: $query');
 
       final response = await http.get(
         Uri.parse('$baseUrl/tonics/getByName/$hospitalId/$query'),
         headers: {'Content-Type': 'application/json'},
       );
-
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
@@ -64,15 +58,12 @@ class TonicService {
           // In case backend someday returns a plain list
           return List<Map<String, dynamic>>.from(decoded);
         } else {
-          print('Unexpected response structure: $decoded');
           return [];
         }
       }
 
-      print('Unexpected status code: ${response.statusCode}');
       return [];
     } catch (e) {
-      print("Error fetching suggestions: $e");
       return [];
     }
   }
@@ -88,7 +79,7 @@ class TonicService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -110,8 +101,6 @@ class TonicService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print("🔹 Response: ${response.statusCode} => ${response.body}");
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
@@ -119,16 +108,12 @@ class TonicService {
           // Safely convert all items to Map<String, dynamic>
           return List<Map<String, dynamic>>.from(jsonResponse['data']);
         } else {
-          print("⚠️ Invalid format: Missing 'data' list in response");
           return [];
         }
       } else {
-        print("❌ Failed to fetch tonics: ${response.body}");
         return [];
       }
     } catch (e, stack) {
-      print("🔥 Exception in getAllTonics: $e");
-      print(stack);
       return [];
     }
   }
@@ -138,9 +123,6 @@ class TonicService {
     Map<String, dynamic> data,
   ) async {
     try {
-      print('Updating Tonic with ID: $id');
-      print('Data: $data');
-
       final response = await http.patch(
         Uri.parse('$baseUrl/tonics/updateById/$id'),
         headers: {"Content-Type": "application/json"},
@@ -149,15 +131,12 @@ class TonicService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
-      } else {
-        print("❌ Tonic update failed: ${response.statusCode}");
-      }
+      } else {}
     } catch (e) {
-      print("❌ Tonic update error: $e");
+      return null;
     }
     return null;
   }
-
 
   Future<void> deleteTonic(int id) async {
     try {
@@ -166,8 +145,7 @@ class TonicService {
         headers: {"Content-Type": "application/json"},
       );
     } catch (e) {
-      print("❌ Delete failed: $e");
+      return;
     }
   }
-
 }

@@ -1,16 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../Admin/Appbar/admin_appbar_mobile.dart';
-import '../Admin/Pages/AdminEditProfilePage.dart';
 import '../Drawer/AdminDrawer.dart';
 import '../Pages/DashboardPages/administrator_dashboard.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Services/hospital_Service.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:image_picker/image_picker.dart';
 
 class OverallAdministratorDashPage extends StatefulWidget {
   @override
@@ -21,7 +19,6 @@ class OverallAdministratorDashPage extends StatefulWidget {
 class _OverallAdministratorDashPageState
     extends State<OverallAdministratorDashPage> {
   // STORAGE
-  final secureStorage = FlutterSecureStorage();
   String? hospitalName;
   String? hospitalPlace;
   String? hospitalPhoto;
@@ -66,19 +63,15 @@ class _OverallAdministratorDashPageState
     pickedImage = null;
   }
 
-  // Load secure stored hospital data
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      hospitalName = name ?? "Unknown Hospital";
-      hospitalPlace = place ?? "Unknown Place";
-      hospitalPhoto =
-          photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
-    });
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+    setState(() {});
   }
 
   Future<void> loadHospitals() async {
@@ -206,9 +199,7 @@ class _OverallAdministratorDashPageState
       return;
     }
 
-
     if (nameCtrl.text.isEmpty ||
-
         addrCtrl.text.isEmpty ||
         phoneCtrl.text.isEmpty ||
         mailCtrl.text.isEmpty) {

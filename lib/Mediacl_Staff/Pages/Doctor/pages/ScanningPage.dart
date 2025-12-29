@@ -682,11 +682,13 @@
 // }
 
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Scan_Test_Get-Service.dart';
 import '../../../../Services/consultation_service.dart';
@@ -704,7 +706,6 @@ class ScanningPage extends StatefulWidget {
 
 class _ScanningPageState extends State<ScanningPage> {
   final Color primaryColor = const Color(0xFFBF955E);
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final socketService = SocketService();
 
   bool _isSubmitting = false;
@@ -772,18 +773,18 @@ class _ScanningPageState extends State<ScanningPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final doctorId = await secureStorage.read(key: 'userId') ?? '';
+      final prefs = await SharedPreferences.getInstance();
+      final doctorId = prefs.getString('userId') ?? '';
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
-      print(widget.consultation);
+
       for (var entry in savedScans.entries) {
         final scanName = entry.key;
         final scanData = entry.value;
 
         // 🔥 SKIP IF options list is empty
         if (scanData['options'] == null || scanData['options'].isEmpty) {
-          print("⏭ Skipped '$scanName' because options are empty.");
           continue; // Skip this scan
         }
 

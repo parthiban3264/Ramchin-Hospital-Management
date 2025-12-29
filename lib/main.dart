@@ -102,7 +102,7 @@
 // }
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Admin/Pages/admin_dashboard.dart';
 import 'Administrator/Overall_Administrator_Dashboard.dart';
@@ -138,8 +138,6 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
-
   @override
   void initState() {
     super.initState();
@@ -147,17 +145,17 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _checkLoginStatus() async {
-    String? isLogged = await secureStorage.read(key: 'isLogged');
-    String? role = await secureStorage.read(key: 'role');
-    String? status = await secureStorage.read(key: 'hospitalStatus');
-    String? staffStatus = await secureStorage.read(key: 'staffStatus');
+    final prefs = await SharedPreferences.getInstance();
+    // final hospitalId = prefs.getString('hospitalId');
+    String? isLogged = prefs.getString('isLogged') ?? 'false';
+    String? role = prefs.getString('role');
+    String? status = prefs.getString('hospitalStatus');
+    // String? staffStatus = prefs.getString('staffStatus');
 
     if (isLogged == 'true' && role != null && status != null) {
       Widget dashboard;
 
-
       if ((role.toLowerCase() == "admin" && status.toUpperCase() == 'ACTIVE')) {
-
         dashboard = const AdminDashboardPage();
       } else if (role.toLowerCase() == "patient") {
         dashboard = const PatientDashboardPage();

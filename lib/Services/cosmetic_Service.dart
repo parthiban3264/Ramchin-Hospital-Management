@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart';
 
 class CosmeticService {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   // --------------------- CREATE MANY ---------------------
   Future<bool> createCosmetics(List<Map<String, dynamic>> dataList) async {
     final url = Uri.parse("$baseUrl/cosmetics/create");
@@ -21,8 +21,8 @@ class CosmeticService {
 
   // --------------------- GET ALL BY HOSPITAL ---------------------
   Future<List<dynamic>> getAllCosmetics() async {
-    final hospitalId = await secureStorage.read(key: "hospitalId");
-
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
     final url = Uri.parse("$baseUrl/cosmetics/getAll/$hospitalId");
 
     final response = await http.get(url);

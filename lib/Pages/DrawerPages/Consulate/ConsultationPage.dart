@@ -1,11 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Services/consultation_service.dart';
 import '../../NotificationsPage.dart';
 import 'doctor_consultation_page.dart';
-import 'package:lottie/lottie.dart';
 
 const Color customGold = Color(0xFFBF955E);
 
@@ -22,8 +22,6 @@ class _ConsultationQueuePageState extends State<ConsultationQueuePage>
   bool _isLoading = false;
 
   late final AnimationController _dotController;
-
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -46,11 +44,11 @@ class _ConsultationQueuePageState extends State<ConsultationQueuePage>
     try {
       final response = await ConsultationService().getAllConsultations();
       final List<dynamic> rawList = response;
+      final prefs = await SharedPreferences.getInstance();
 
       // Read role and userid from secure storage
-      final role = await secureStorage.read(key: 'role') ?? '';
-      final userId = await secureStorage.read(key: 'userId') ?? '';
-      print('Role: $role, User ID: $userId');
+      final role = prefs.getString('role') ?? '';
+      final userId = prefs.getString('userId') ?? '';
 
       // Filter by role and status
       List filteredList = rawList.where((item) {

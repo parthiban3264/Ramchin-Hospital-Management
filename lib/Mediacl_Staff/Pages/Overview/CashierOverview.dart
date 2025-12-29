@@ -1,30 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hospitrax/Services/payment_service.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-const Color customGold = Color(0xFFBF955E);
-const Color backgroundColor = Color(0xFFFFF7E6);
-const Color cardColor = Colors.white;
-
-const TextStyle sectionTitleStyle = TextStyle(
-  fontSize: 18,
-  fontWeight: FontWeight.bold,
-  color: Colors.black87,
-);
-
-const TextStyle cardTitleStyle = TextStyle(
-  fontSize: 15,
-  fontWeight: FontWeight.w600,
-  color: Colors.black87,
-);
-
-const TextStyle cardValueStyle = TextStyle(
-  fontSize: 26,
-  fontWeight: FontWeight.bold,
-  color: Colors.black87,
-);
+import 'widgets/cashier_widget.dart';
 
 class CashierOverviewPage extends StatefulWidget {
   const CashierOverviewPage({super.key});
@@ -34,7 +13,6 @@ class CashierOverviewPage extends StatefulWidget {
 }
 
 class _CashierOverviewPageState extends State<CashierOverviewPage> {
-  final secureStorage = const FlutterSecureStorage();
   final PaymentService _paymentService = PaymentService();
 
   String? hospitalName;
@@ -75,17 +53,14 @@ class _CashierOverviewPageState extends State<CashierOverviewPage> {
   }
 
   Future<void> _loadHospitalInfo() async {
-    final name = await secureStorage.read(key: 'hospitalName');
-    final place = await secureStorage.read(key: 'hospitalPlace');
-    final photo = await secureStorage.read(key: 'hospitalPhoto');
+    final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      hospitalName = name ?? "Unknown Hospital";
-      hospitalPlace = place ?? "Unknown Place";
-      hospitalPhoto =
-          photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
-    });
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+    setState(() {});
   }
 
   bool isToday(String? dateString) {
@@ -300,18 +275,18 @@ class _CashierOverviewPageState extends State<CashierOverviewPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildHospitalCard(),
+                  buildHospitalCard(),
                   const SizedBox(height: 20),
 
                   //---------------- Toggle Buttons ----------------
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildToggle("Today", showToday, () {
+                      buildToggle("Today", showToday, () {
                         setState(() => showToday = true);
                       }),
                       const SizedBox(width: 16),
-                      _buildToggle("Overall", !showToday, () {
+                      buildToggle("Overall", !showToday, () {
                         setState(() => showToday = false);
                       }),
                     ],
@@ -319,48 +294,48 @@ class _CashierOverviewPageState extends State<CashierOverviewPage> {
 
                   const SizedBox(height: 28),
 
-                  _buildSectionTitle(
+                  buildSectionTitle(
                     "Payments Overview ( ${showToday ? 'Today' : 'Overall'} )",
                   ),
                   const SizedBox(height: 12),
 
-                  _buildGrid([
+                  buildGrid([
                     // _buildMetricCard(
                     //   "Register",
                     //   "${showToday ? regToday : regOverall}",
                     //   Icons.app_registration,
                     // ),
-                    _buildMetricCard(
+                    buildMetricCard(
                       "Pending",
                       "${showToday ? totalPendingPayments : overAllPendingPayments}",
                       Icons.pending_actions_outlined,
                     ),
 
-                    _buildMetricCard(
+                    buildMetricCard(
                       "Paid ",
                       "${showToday ? totalPaidToday : totalPaidOverall}",
                       Icons.verified_outlined,
                     ),
 
-                    _buildMetricCard(
+                    buildMetricCard(
                       "Registration\n Fees",
                       "${showToday ? registrationFeeToday : registrationFeeOverall}",
                       Icons.receipt_long_rounded,
                     ),
 
-                    _buildMetricCard(
+                    buildMetricCard(
                       "Testing\n Fees",
                       "${showToday ? testingFeeToday : testingFeeOverall}",
                       Icons.biotech_rounded,
                     ),
 
-                    _buildMetricCard(
+                    buildMetricCard(
                       "Manual Pay",
                       "${showToday ? manualPayToday : manualPayOverall}",
                       Icons.payments,
                     ),
 
-                    _buildMetricCard(
+                    buildMetricCard(
                       "Online Pay",
                       "${showToday ? onlinePayToday : onlinePayOverall}",
                       Icons.phone_iphone,
@@ -375,53 +350,7 @@ class _CashierOverviewPageState extends State<CashierOverviewPage> {
     );
   }
 
-  // -----------------------------------------------------------
-  // TOGGLE BUTTON STYLE (same as your admin page)
-  // -----------------------------------------------------------
-  Widget _buildToggle(String label, bool active, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 28),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: active
-              ? const LinearGradient(
-                  colors: [Color(0xFFF5D6A2), Color(0xFFEEC98F)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : const LinearGradient(
-                  colors: [Color(0xFFFFF3E0), Color(0xFFFFF3E0)],
-                ),
-          border: Border.all(
-            color: active ? Color(0xFF886638) : Colors.brown.shade300,
-            width: active ? 1.8 : 1.2,
-          ),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: Colors.brown.withOpacity(0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.brown.shade800 : Colors.brown.shade600,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHospitalCard() {
+  Widget buildHospitalCard() {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -475,60 +404,6 @@ class _CashierOverviewPageState extends State<CashierOverviewPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [Text(title, style: sectionTitleStyle)],
-  );
-
-  Widget _buildGrid(List<Widget> cards) => GridView.count(
-    crossAxisCount: 2,
-    crossAxisSpacing: 16,
-    mainAxisSpacing: 16,
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    childAspectRatio: 1.25,
-    children: cards,
-  );
-
-  Widget _buildMetricCard(String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            offset: const Offset(0, 5),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: customGold, size: 28),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: cardTitleStyle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Center(child: Text(value, style: cardValueStyle)),
-        ],
       ),
     );
   }

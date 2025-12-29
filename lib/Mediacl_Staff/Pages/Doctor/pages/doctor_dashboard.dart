@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../appbar/doctor_appbar_mobile.dart';
 import '../service/doctor_service.dart';
@@ -17,7 +17,6 @@ class DoctorDashboard extends StatefulWidget {
 class DoctorDashboardState extends State<DoctorDashboard> {
   List<dynamic> consultations = [];
   static int selectedIndex = 0;
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   bool isLoading = true;
 
@@ -31,11 +30,13 @@ class DoctorDashboardState extends State<DoctorDashboard> {
   }
 
   Future<void> _initializeDashboard() async {
+    final prefs = await SharedPreferences.getInstance();
+
     setState(() => isLoading = true);
 
     // Fetch hospitalId and doctorId from secure storage
-    hospitalId = await secureStorage.read(key: 'hospitalId');
-    doctorId = await secureStorage.read(key: 'userId');
+    hospitalId = prefs.getString('hospitalId');
+    doctorId = prefs.getString('userId');
     if (hospitalId != null && doctorId != null) {
       // Fetch consultations for this doctor
       final allConsultations = await DoctorServices.getConsultationsByDoctorId(

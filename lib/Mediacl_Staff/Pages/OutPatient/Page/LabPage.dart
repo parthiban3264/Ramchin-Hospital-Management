@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/admin_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
-
 import '../Report/ReportCard.dart';
-
 
 class LabPage extends StatefulWidget {
   final List<Map<String, dynamic>> allTests;
@@ -18,19 +16,18 @@ class LabPage extends StatefulWidget {
   final int mode; //  0 or 1
 
   const LabPage({
-    Key? key,
+    super.key,
     required this.allTests,
     required this.currentIndex,
     required this.queueStaus,
     required this.mode,
-  }) : super(key: key);
+  });
 
   @override
   State<LabPage> createState() => _LabPageState();
 }
 
 class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
   final Color primaryColor = const Color(0xFFBF955E);
   final socketService = SocketService();
 
@@ -109,7 +106,6 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     return [];
   }
 
-
   String _labName = '';
 
   @override
@@ -147,19 +143,20 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
 
     _loadHospitalLogo();
 
-
     _initLab();
-
   }
 
   void _loadHospitalLogo() async {
-    logo = await secureStorage.read(key: 'hospitalPhoto');
-    setState(() {});
+    final prefs = await SharedPreferences.getInstance();
 
+    logo = prefs.getString('hospitalPhoto');
+    setState(() {});
   }
 
   Future<void> _initLab() async {
-    final labId = await secureStorage.read(key: 'userId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final labId = prefs.getString('userId');
     if (labId != null) {
       await loadNames(labId);
     }
@@ -171,7 +168,6 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     setState(() {
       _labName = labProfile?['name'] ?? '';
     });
-
   }
 
   @override
@@ -248,9 +244,6 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
       }
 
       final test = widget.allTests[widget.currentIndex];
-      print('test${widget.currentIndex}');
-      print('testcurrentIndex$test');
-      print('Id${test['id']}');
 
       Map<String, String> optionResults = {};
       for (int i = 0; i < _selectedOptions.length; i++) {
@@ -285,7 +278,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _handleSubmit() async {
-    final description = _descriptionController.text.trim();
+    // final description = _descriptionController.text.trim();
 
     // final Map<String, String> optionResults = {};
     // for (var entry in _optionControllers.entries) {
@@ -307,8 +300,10 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     setState(() => _isLoading = true);
 
     try {
-      final userId = await secureStorage.read(key: 'userId');
-      final patient = widget.allTests[0]['Patient'] ?? {};
+      final prefs = await SharedPreferences.getInstance();
+
+      final Staff_Id = prefs.getString('userId');
+      // final patient = widget.allTests[0]['Patient'] ?? {};
       // final consultationList = widget.allTests[0]['ConsultationId'];
       // final int consultationId =
       //     int.tryParse(widget.allTests[0]['consultationId'] ?? '0') ?? 0;
@@ -323,14 +318,10 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
           // 'queueStatus': 'PENDING',
           'status': 'COMPLETED',
           'updatedAt': _dateTime,
-          'staff_Id': userId,
+          'staff_Id': Staff_Id,
         });
       }
 
-      print('✅ All tests updated: $testIds');
-
-      print(consultationId);
-      print(widget.currentIndex);
       if (consultationId != null) {
         await ConsultationService().updateConsultation(consultationId, {
           'status': 'ENDPROCESSING',
@@ -476,7 +467,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
         }
       }
     }
-    print(allResults);
+
     // 🚫 Skip overall summary section
     return allResults;
   }
@@ -498,7 +489,6 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.allTests);
     final record = widget.allTests[widget.currentIndex];
     final patient = record['Patient'] ?? {};
     final phone = patient['phone']?.toString() ?? 'N/A';
@@ -531,7 +521,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -585,134 +575,147 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
       body: widget.mode == 1
           ? SingleChildScrollView(
               padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  // _buildPatientCard(
-                  //   name: patient['name']?.toString() ?? 'Unknown',
-                  //   id: patientId,
-                  //   phone: phone,
-                  //   address: address,
-                  //   dob: dob,
-                  //   age: age,
-                  //   gender: gender,
-                  //   bloodGroup: bloodGroup,
-                  //   createdAt: createdAt,
-                  // ),
-                  // const SizedBox(height: 20),
-                  ReportCardWidget(
-                    record: record,
-                    doctorName: doctorName,
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    children: [
+                      // _buildPatientCard(
+                      //   name: patient['name']?.toString() ?? 'Unknown',
+                      //   id: patientId,
+                      //   phone: phone,
+                      //   address: address,
+                      //   dob: dob,
+                      //   age: age,
+                      //   gender: gender,
+                      //   bloodGroup: bloodGroup,
+                      //   createdAt: createdAt,
+                      // ),
+                      // const SizedBox(height: 20),
+                      ReportCardWidget(
+                        record: record,
+                        doctorName: doctorName,
 
-                    staffName: _labName,
+                        staffName: _labName,
 
-                    hospitalPhotoBase64: logo ?? '',
-                    optionResults: allTestsOptionResults,
-                    testTable: allTestsReportTable,
-                    mode: widget.mode,
-                    showButtons: true,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade600,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        hospitalPhotoBase64: logo ?? '',
+                        optionResults: allTestsOptionResults,
+                        testTable: allTestsReportTable,
+                        mode: widget.mode,
+                        showButtons: true,
                       ),
-                      elevation: 8,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 50,
-                        vertical: 14,
-                      ),
-                    ),
-                    onPressed: _isLoading
-                        ? null
-                        : _handleSubmit, // disable when loading
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Submit',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade600,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
+                          elevation: 8,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 50,
+                            vertical: 14,
+                          ),
+                        ),
+                        onPressed: _isLoading
+                            ? null
+                            : _handleSubmit, // disable when loading
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Submit',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 50),
+                    ],
                   ),
-                  const SizedBox(height: 50),
-                ],
+                ),
               ),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  if (!isCompleted)
-                    _buildPatientCard(
-                      name: patient['name']?.toString() ?? 'Unknown',
-                      id: patientId,
-                      phone: phone,
-                      address: address,
-                      dob: dob,
-                      age: age,
-                      // gender: gender,
-                      genderColor: _genderColor(gender),
-                      genderIcon: _genderIcon(gender),
-                      bloodGroup: bloodGroup,
-                      createdAt: createdAt,
-                    ),
-                  const SizedBox(height: 5),
-
-                  // Same logic as before
-                  if (isCompleted)
-                    ReportCardWidget(
-                      record: record,
-                      doctorName: doctorName,
-
-                      staffName: _labName,
-
-                      hospitalPhotoBase64: logo ?? '',
-                      optionResults: yourOptionResultsMap,
-                      testTable: yourTestTableList,
-                      mode: widget.mode,
-                      showButtons: true,
-                    )
-                  else ...[
-                    if (_selectedOptions.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    children: [
+                      if (!isCompleted)
+                        _buildPatientCard(
+                          name: patient['name']?.toString() ?? 'Unknown',
+                          id: patientId,
+                          phone: phone,
+                          address: address,
+                          dob: dob,
+                          age: age,
+                          // gender: gender,
+                          genderColor: _genderColor(gender),
+                          genderIcon: _genderIcon(gender),
+                          bloodGroup: bloodGroup,
+                          createdAt: createdAt,
                         ),
-                        child: const Center(
-                          child: Text(
-                            "No Options Selected",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                      const SizedBox(height: 5),
+
+                      // Same logic as before
+                      if (isCompleted)
+                        ReportCardWidget(
+                          record: record,
+                          doctorName: doctorName,
+
+                          staffName: _labName,
+
+                          hospitalPhotoBase64: logo ?? '',
+                          optionResults: yourOptionResultsMap,
+                          testTable: yourTestTableList,
+                          mode: widget.mode,
+                          showButtons: true,
+                        )
+                      else ...[
+                        if (_selectedOptions.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "No Options Selected",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          _buildMedicalCard(
+                            title: title,
+                            doctorName: doctorName,
+                            doctorId: doctorId,
+                            selectedOptions: _selectedOptions,
+                            isCompleted: isCompleted,
                           ),
-                        ),
-                      )
-                    else
-                      _buildMedicalCard(
-                        title: title,
-                        doctorName: doctorName,
-                        doctorId: doctorId,
-                        selectedOptions: _selectedOptions,
-                        isCompleted: isCompleted,
-                      ),
-                    if (_selectedOptions.isNotEmpty) ...[
-                      const SizedBox(height: 30),
-                      _buildInputSection(),
+                        if (_selectedOptions.isNotEmpty) ...[
+                          const SizedBox(height: 30),
+                          _buildInputSection(),
+                        ],
+                      ],
+                      SizedBox(height: 50),
                     ],
-                  ],
-                  SizedBox(height: 50),
-                ],
+                  ),
+                ),
               ),
             ),
     );
@@ -726,7 +729,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -817,7 +820,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -853,7 +856,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.15),
+                    color: primaryColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -923,7 +926,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -990,15 +993,13 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                         const SizedBox(height: 6),
                         if (!isCompleted)
                           TextField(
-
                             keyboardType: TextInputType.visiblePassword,
 
                             controller: _optionControllers[idx],
                             maxLines: 2,
                             decoration: InputDecoration(
                               hintText:
-                                  'eg Range (${optionReferenceMap[option]})' ??
-                                  'Enter notes or report for this option',
+                                  'eg Range (${optionReferenceMap[option]})',
                               hintStyle: TextStyle(
                                 fontSize: 15,
                                 color: Colors.grey[500],

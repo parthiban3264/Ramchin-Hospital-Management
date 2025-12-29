@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hospitrax/Admin/Pages/AdminProfilePage.dart';
-import '../../../Pages/DrawerPages/Consulate/ConsultationPage.dart';
-import '../Admin/Pages/changePasswordPage.dart';
-import '../Admin/Pages/globals.dart';
-import '../Mediacl_Staff/Pages/Overview/Overviewpage.dart';
-import '../Mediacl_Staff/Pages/OutPatient/PatientRegistrationPage.dart';
-import '../../../Pages/DrawerPages/ReceptionDeskPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../Admin/Colors/Colors.dart';
 import '../Admin/Pages/AdminEditProfilePage.dart';
-import '../Pages/DrawerPages/Consulate/ReceptionDeskQueue.dart';
-import '../Pages/DrawerPages/TreatmentQueuePage.dart';
+import '../Admin/Pages/changePasswordPage.dart';
+import '../Admin/Pages/globals.dart';
 import '../Pages/NotificationsPage.dart';
-import '../Pages/UserIdCheckPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
 
@@ -100,8 +94,9 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
   String? userId;
 
   Future<void> userIdload() async {
-    final secureStorage = const FlutterSecureStorage();
-    final storedUserId = await secureStorage.read(key: 'userId');
+    final prefs = await SharedPreferences.getInstance();
+
+    final storedUserId = await prefs.getString('userId');
 
     setState(() {
       userId = storedUserId;
@@ -125,7 +120,6 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    print('drawer items $drawerItems ${widget.designation}');
     return Drawer(
       backgroundColor: CustomColors.customGold,
       width: widget.width,
@@ -288,9 +282,10 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
               ),
               onTap: () async {
                 try {
-                  const secureStorage = FlutterSecureStorage();
+                  final prefs = await SharedPreferences.getInstance();
+
                   await AuthService().logout(); // logout API call
-                  await secureStorage.deleteAll(); // clear all local storage
+                  await prefs.clear(); // clear all local storage
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
