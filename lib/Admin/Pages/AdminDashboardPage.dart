@@ -16,6 +16,7 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/ECHOQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/EcgQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/EegQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/FeesQueuePage.dart';
+import '../../Mediacl_Staff/Pages/OutPatient/Queue/GynQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/InjectionQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/LabQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/MriScanQueuePage.dart';

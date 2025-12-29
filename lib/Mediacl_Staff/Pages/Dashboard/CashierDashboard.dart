@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../Admin/Pages/Accounts/AccountsDrawerPage.dart';
+import '../../../Admin/Pages/Accounts/ExpensePage.dart';
+import '../../../Admin/Pages/Accounts/FinancePage.dart';
+import '../../../Admin/Pages/Accounts/IncomeExpensePage.dart';
 import '../../../Services/admin_service.dart';
 import '../OutPatient/Queue/FeesQueuePage.dart';
 
@@ -204,6 +208,149 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (cashierPermissionIds.contains(21) ||
+                      cashierPermissionIds.contains(22) ||
+                      cashierPermissionIds.contains(23) ||
+                      cashierPermissionIds.contains(24))
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      color: Colors.white.withOpacity(0.95),
+                      elevation: 8,
+                      shadowColor: Colors.black26,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 30,
+                          horizontal: 20,
+                        ),
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Text(
+                                'ACCOUNT Desk',
+                                style: TextStyle(
+                                  color: const Color(0xFF886638),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 25),
+
+                            //-------------------------------
+                            //  🔥 NEW: NO PERMISSION MESSAGE
+                            //-------------------------------
+                            if (!cashierPermissionIds.contains(21) &&
+                                !cashierPermissionIds.contains(22) &&
+                                !cashierPermissionIds.contains(23) &&
+                                !cashierPermissionIds.contains(24))
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Colors.red.shade300,
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  "You don't have permission",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
+                            if (cashierPermissionIds.contains(21) ||
+                                cashierPermissionIds.contains(22))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (cashierPermissionIds.contains(21))
+                                    _buildActionItem(Icons.money, "Income", () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const AccountIncomePage(),
+                                        ),
+                                      );
+                                    }),
+                                  if (cashierPermissionIds.contains(22))
+                                    _buildActionItem(
+                                      Icons.healing,
+                                      "Expense",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const AccountExpensePage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+                            const SizedBox(height: 25),
+                            if (cashierPermissionIds.contains(23) ||
+                                cashierPermissionIds.contains(24))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (cashierPermissionIds.contains(23))
+                                    _buildActionItem(
+                                      Icons.drive_folder_upload_rounded,
+                                      "Drawing",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const AccountDrawerPage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (cashierPermissionIds.contains(24))
+                                    _buildActionItem(
+                                      Icons.bar_chart,
+                                      "Finance",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => const FinancePage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+
+                            const SizedBox(height: 25),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -1,13 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-
-import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Doctor/doctor_service.dart';
 import '../../../../Services/consultation_service.dart';
+import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/socket_service.dart';
+import '../Page/SymptomsPage.dart';
 
 class OutpatientQueuePage extends StatefulWidget {
   const OutpatientQueuePage({super.key});
@@ -113,21 +112,21 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     );
   }
 
-  // bool _hasTodayConsulting(List<Map<String, dynamic>> consultations) {
-  //   final now = DateTime.now();
-  //
-  //   return consultations.any((c) {
-  //     final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
-  //     if (queueStatus != 'drqueue' && queueStatus != 'ongoing') return false;
-  //
-  //     final createdAt = DateTime.tryParse(c['createdAt'] ?? '');
-  //     if (createdAt == null) return false;
-  //
-  //     return createdAt.year == now.year &&
-  //         createdAt.month == now.month &&
-  //         createdAt.day == now.day;
-  //   });
-  // }
+  bool _hasTodayConsulting(List<Map<String, dynamic>> consultations) {
+    final now = DateTime.now();
+
+    return consultations.any((c) {
+      final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+      if (queueStatus != 'drqueue' && queueStatus != 'ongoing') return false;
+
+      final createdAt = DateTime.tryParse(c['createdAt'] ?? '');
+      if (createdAt == null) return false;
+
+      return createdAt.year == now.year &&
+          createdAt.month == now.month &&
+          createdAt.day == now.day;
+    });
+  }
 
   DateTime? _parseCreatedAt(String? dateStr) {
     if (dateStr == null) return null;
@@ -369,6 +368,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
       });
     } catch (e) {
       if (firstLoad) setState(() => isInitialLoading = false);
+      //print('Error fetching consultations: $e');
     }
   }
 
@@ -520,6 +520,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     Color accentColor,
     List<Map<String, dynamic>> doctors,
   ) {
+    print('item: $item');
     final patient = item['Patient'] ?? {};
 
     final phone = patient['phone']?['mobile'] ?? '-';
@@ -530,7 +531,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     );
 
     final drName = selectedDoctor['name'];
-
+    print(selectedDoctor);
     final specialist = selectedDoctor['department'];
 
     final address = patient['address']?['Address'] ?? '-';
@@ -539,10 +540,22 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     bool isOngoings = queueStatus == 'ongoing';
     bool isdrqueue = queueStatus == 'drqueue';
     final status = item['status']?.toString().toLowerCase().trim() ?? '';
+    final emergency = item['emergency'] ?? false;
 
     final bool isCancelled = status == 'cancelled';
+    final bool isPending = status == 'pending';
+    final bool isEndProcessing = status == 'endprocessing';
+
+    final Color pendingBgColor = Colors.orange.shade50;
+    final Color pendingTextColor = Colors.orange.shade700;
+
+    final Color endProcessingBgColor = Colors.green.shade50;
+    final Color endProcessingTextColor = Colors.green.shade700;
 
     final cancelReason = item['cancelReason'] ?? 'No reason provided';
+    final tokenNo = (item['tokenNo'] == null || item['tokenNo'] == 0)
+        ? '-'
+        : item['tokenNo'].toString();
 
     return AnimatedBuilder(
       animation: _glowController,
@@ -554,7 +567,11 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
         return Container(
           margin: const EdgeInsets.only(bottom: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isPending
+                ? pendingBgColor
+                : isEndProcessing
+                ? endProcessingBgColor
+                : Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: glowColor ?? accentColor.withValues(alpha: 0.4),
@@ -573,6 +590,66 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (emergency == true) ...[
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            "EMERGENCY",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
+                Row(
+                  //crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Token No: ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Text(
+                      tokenNo,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -674,6 +751,37 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                           color: Colors.grey.shade700,
                         ),
                       ),
+                      if (isPending) ...[
+                        const Spacer(),
+                        // ✅ Make edit icon clickable
+                        GestureDetector(
+                          onTap: () async {
+                            final sugarData = item['sugerTest'] ?? false;
+                            final sugarValue = item['sugar']?.toString() ?? '';
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SymptomsPage(
+                                  patient: item['Patient'] ?? {},
+                                  consultationId: item['id'],
+                                  sugarData: sugarData,
+                                  sugar: sugarValue,
+                                  consultationData: item,
+                                  mode: 2,
+                                ),
+                              ),
+                            );
+
+                            // Refresh list if needed
+                            // if (result == true) {
+                            //   setState(() {
+                            //     futurePatients = PaymentService().getAllPaid();
+                            //   });
+                            // }
+                          },
+                          child: Icon(Icons.edit, size: 18, color: accentColor),
+                        ),
+                      ],
                     ],
                   ),
 
@@ -853,6 +961,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
 
   @override
   Widget build(BuildContext context) {
+    print('consultations.l $allConsultations');
     final allPatientsColor = primaryColor;
 
     return Scaffold(
@@ -1025,12 +1134,15 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                   ),
                   itemBuilder: (context, index) {
                     final doc = doctors[index];
+                    print('doc $doc');
                     final doctorId = doc['id'].toString();
                     final color = doctorColors[index % doctorColors.length];
                     final isSelected = selectedDoctorId == doctorId;
                     final hasBehind = _doctorHasOngoing(doctorId)
                         ? false
                         : _doctorHasBehind(doctorId);
+                    final status = doc['status'];
+                    print('docstatus $status');
                     final hasPending = _doctorHasPending(doctorId);
                     final hasOngoing = _doctorHasOngoing(doctorId);
 
@@ -1129,21 +1241,16 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                                 ),
                               ),
                       )
-                    : Center(
-                        child: Container(
-                          constraints: BoxConstraints(maxWidth: 600),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: filteredQueue.length,
-                            itemBuilder: (context, index) {
-                              return _consultationCard(
-                                filteredQueue[index],
-                                accentColor,
-                                doctors,
-                              );
-                            },
-                          ),
-                        ),
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filteredQueue.length,
+                        itemBuilder: (context, index) {
+                          return _consultationCard(
+                            filteredQueue[index],
+                            accentColor,
+                            doctors,
+                          );
+                        },
                       ),
               ),
             ],

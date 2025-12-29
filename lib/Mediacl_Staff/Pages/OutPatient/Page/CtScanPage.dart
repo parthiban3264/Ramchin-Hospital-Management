@@ -171,15 +171,15 @@ class _CtScanPageState extends State<CtScanPage>
       resultMap[key] = controller.text.trim();
     });
     bool hasEmpty = resultMap.values.any((v) => v.isEmpty);
-    if (_pickedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("At least one image is required."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
+    // if (_pickedImages.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text("At least one image is required."),
+    //       backgroundColor: Colors.redAccent,
+    //     ),
+    //   );
+    //   return;
+    // }
     if (hasEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -324,12 +324,13 @@ class _CtScanPageState extends State<CtScanPage>
     // final doctorName = doctor['name']?.toString() ?? 'N/A';
     final doctorName = patient['doctor']?['name'] ?? '-';
 
-    final createdAt = record['createdAt'] ?? 'N/A';
-    final title = record['title'] ?? 'N/A';
+    final createdAt = record['createdAt'] ?? '-';
+    final title = record['title'] ?? '-';
+    final reason = record['reason'] ?? '-';
     final dob = _formatDob(patient['dob']);
     final age = _calculateAge(patient['dob']);
-    final gender = patient['gender'] ?? 'N/A';
-    final bloodGroup = patient['bldGrp'] ?? 'N/A';
+    final gender = patient['gender'] ?? '-';
+    final bloodGroup = patient['bldGrp'] ?? '-';
 
     // 🩻 Selected X-Ray Options
     final selectedOptions = List<String>.from(record['selectedOptions'] ?? []);
@@ -428,6 +429,7 @@ class _CtScanPageState extends State<CtScanPage>
                   _buildMedicalCard(
                     title: title,
                     doctorName: doctorName,
+                    reason:reason,
                     doctorId: doctorId,
                     selectedOptions: selectedOptions,
                   ),
@@ -644,6 +646,7 @@ class _CtScanPageState extends State<CtScanPage>
   Widget _buildMedicalCard({
     required String title,
     required String doctorName,
+    required String reason,
     required String doctorId,
     required List<String> selectedOptions,
   }) {

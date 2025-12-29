@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Pages/payment_modal.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/payment_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
+import '../../Medical/Widget/whatsApp_Send_PaymentBill.dart';
 
 class FeesPaymentPage extends StatefulWidget {
   final Map<String, dynamic> fee;
@@ -29,6 +32,7 @@ class FeesPaymentPage extends StatefulWidget {
 }
 
 class _FeesPaymentPageState extends State<FeesPaymentPage> {
+  final prefs = SharedPreferences.getInstance();
   bool _isProcessing = false;
   final socketService = SocketService();
   String? logo;
@@ -40,6 +44,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
   late TextEditingController addressController;
   late TextEditingController dobController;
   late TextEditingController feeController;
+  late TextEditingController idController;
 
   @override
   void initState() {
@@ -50,6 +55,9 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     );
     nameController = TextEditingController(
       text: extractName(widget.patient['name']),
+    );
+    idController = TextEditingController(
+      text: extractName(widget.patient['id']),
     );
     addressController = TextEditingController(
       text: extractString(widget.patient['address'], 'Address'),
@@ -72,6 +80,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
   void _loadHospitalLogo() async {
     final prefs = await SharedPreferences.getInstance();
+
     logo = prefs.getString('hospitalPhoto');
     hospitalName = prefs.getString('hospitalName');
     hospitalPlace = prefs.getString('hospitalPlace');
@@ -149,6 +158,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
       return DateFormat("dd-MM-yyyy hh:mm a").format(date);
     } catch (e) {
+      print("Date parse error: $e");
       return value.toString();
     }
   }
@@ -171,11 +181,10 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       return;
     }
     final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
+    final prefs = await SharedPreferences.getInstance();
 
     // ✅ Payment succeeded → update backend
     setState(() => _isProcessing = true);
-    final prefs = await SharedPreferences.getInstance();
-
     final Staff_Id = prefs.getString('userId');
     final response = await PaymentService().updatePayment(paymentId, {
       'status': 'PAID',
@@ -198,12 +207,14 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       final testId = (testings != null && testings.isNotEmpty)
           ? testings[0]['payment_Id']
           : null;
-
+      print(testId);
       await TestingScanningService().updateTestAndScan(testId);
       await ConsultationService().updateConsultation(consultationId, {
         "queueStatus": 'PENDING',
       });
-    } else {}
+    } else {
+      print('Invalid type');
+    }
     // else if (type == 'MEDICINEFEEANDINJECTIONFEE') {
     // await ConsultationService().updateConsultation(Id, {
     // "paymentStatus": true,
@@ -224,12 +235,145 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     }
   }
 
+  Future<void> _updateSugarTest() async {
+    try {
+      final consultationId = widget.fee['consultation_Id'];
+      final paymentId = widget.fee['id'];
+
+      final consultation = widget.fee['Consultation'];
+      final num paymentAmount = widget.fee['amount'] ?? 0;
+      final num sugarFee = consultation?['sugarTestFee'] ?? 0;
+
+      // 🔒 Safety check
+      if (sugarFee <= 0) {
+        print('No sugar test fee to remove');
+        return;
+      }
+
+      final num finalTotal = (paymentAmount - sugarFee).clamp(
+        0,
+        double.infinity,
+      );
+
+      /// 🔹 Update Payment Amount
+      await PaymentService().updatePayment(paymentId, {
+        'amount': finalTotal,
+        'updatedAt': _dateTime.toString(),
+      });
+
+      /// 🔹 Update Consultation (remove sugar test)
+      await ConsultationService().updateConsultation(consultationId, {
+        "sugerTest": false,
+        "sugerTestQueue": false,
+        "sugarTestFee": 0,
+      });
+
+      /// 🔹 Update local UI state
+      setState(() {
+        widget.fee['amount'] = finalTotal;
+        consultation['sugarTestFee'] = 0;
+      });
+
+      print('✅ Sugar test removed successfully');
+    } catch (e) {
+      print('❌ Error updating sugar test: $e');
+    }
+  }
+
+  Future<void> _updateTestAndScan() async {
+    final testings = widget.fee['TestingAndScanningPatients'];
+
+    final paymentId = widget.fee['id'];
+
+    final num paymentAmount = widget.fee['amount'] ?? 0;
+    final num testFee = testings?['amount'] ?? 0;
+
+    // 🔒 Safety check
+    if (testFee <= 0) {
+      print('No test fee to remove');
+      return;
+    }
+
+    final num finalTotal = (paymentAmount - testFee).clamp(0, double.infinity);
+
+    /// 🔹 Update Payment Amount
+    await PaymentService().updatePayment(paymentId, {
+      'amount': finalTotal,
+      'updatedAt': _dateTime.toString(),
+    });
+
+    final testId = (testings != null && testings.isNotEmpty)
+        ? testings[0]['payment_Id']
+        : null;
+    try {
+      await ConsultationService().updateConsultation(testId, {
+        "unSelectedOptions": '',
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('fee ${widget.fee}');
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
+    final consultation = widget.fee['Consultation'];
+
+    final num? registrationFee = consultation?['registrationFee'];
+    final num? consultationFee = consultation?['consultationFee'];
+    final num? emergencyFee = consultation?['emergencyFee'];
+    final num? sugarTestFee = consultation?['sugarTestFee'];
+    final num totalAmount =
+        (registrationFee ?? 0) +
+        (consultationFee ?? 0) +
+        (emergencyFee ?? 0) +
+        (sugarTestFee ?? 0);
 
     final Color themeColor = const Color(0xFFBF955E);
     const Color background = Color(0xFFF8F8F8);
+    bool hasSubAmounts(dynamic selectedOption) {
+      if (selectedOption is Map) {
+        return selectedOption.values.any((v) => v != null && v != 0);
+      }
+
+      if (selectedOption is List) {
+        return selectedOption.any(
+          (e) => e is Map && e['amount'] != null && e['amount'] != 0,
+        );
+      }
+
+      return false;
+    }
+
+    List<MapEntry<String, num>> parseSelectedOption(dynamic selectedOption) {
+      if (selectedOption is Map) {
+        return selectedOption.entries
+            .map(
+              (e) => MapEntry(
+                e.key.toString(),
+                num.tryParse(e.value.toString()) ?? 0,
+              ),
+            )
+            .where((e) => e.value > 0)
+            .toList();
+      }
+
+      if (selectedOption is List) {
+        return selectedOption
+            .whereType<Map>()
+            .map(
+              (e) => MapEntry(
+                e['name']?.toString() ?? '',
+                num.tryParse(e['amount']?.toString() ?? '') ?? 0,
+              ),
+            )
+            .where((e) => e.key.isNotEmpty && e.value > 0)
+            .toList();
+      }
+
+      return [];
+    }
 
     return Scaffold(
       backgroundColor: background,
@@ -309,7 +453,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -349,6 +493,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                   ),
                   const SizedBox(height: 10),
                   _infoRow("Name ", nameController.text),
+                  _infoRow("PID ", idController.text),
                   _infoRow("Cell No ", cellController.text),
                   _infoRow("DOB ", dobController.text),
                   _infoRow("AGE ", calculateAge(dobController.text)),
@@ -366,26 +511,59 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       ),
                     ),
                   ),
-                  const Divider(thickness: 1.5, height: 25),
-                  const SizedBox(height: 12),
+                  const Divider(thickness: 1.5, height: 20),
+                  const SizedBox(height: 2),
                   if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
-                    Row(
+                    // Row(
+                    //   children: [
+                    //     Text(
+                    //       "${widget.fee['reason']}",
+                    //       style: const TextStyle(
+                    //         fontSize: 16,
+                    //         fontWeight: FontWeight.bold,
+                    //       ),
+                    //     ),
+                    //     Spacer(),
+                    //     Text(
+                    //       "₹ ${feeController.text}",
+                    //       textAlign: TextAlign.end,
+                    //       style: const TextStyle(
+                    //         fontSize: 15,
+                    //         color: Colors.black87,
+                    //       ),
+                    //     ),
+                    //   ],
+                    // ),
+                    Column(
                       children: [
-                        Text(
-                          "${widget.fee['reason']}",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        feeRowWithRemove(
+                          title: "Registration Fee",
+                          amount: registrationFee,
+                          removable: false, // ❌ disabled
                         ),
-                        Spacer(),
-                        Text(
-                          "₹ ${feeController.text}",
-                          textAlign: TextAlign.end,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.black87,
-                          ),
+
+                        feeRowWithRemove(
+                          title: "Consultation Fee",
+                          amount: consultationFee,
+                          removable: false, // ❌ disabled
+                        ),
+
+                        feeRowWithRemove(
+                          title: "Emergency Fee",
+                          amount: emergencyFee,
+                          removable: false, // ❌ disabled
+                        ),
+
+                        feeRowWithRemove(
+                          title: "Sugar Test Fee",
+                          amount: sugarTestFee,
+                          removable: true, // ✅ enabled
+                          onRemove: () {
+                            _updateSugarTest();
+                            setState(() {
+                              consultation['sugarTestFee'] = 0;
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -406,12 +584,72 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    ...tests.map((t) {
+                    // ...tests.map((t) {
+                    //   final title = t["title"]?.toString() ?? "-";
+                    //   final amount = t["amount"]?.toString() ?? "0";
+                    //   final Map<String, dynamic> selectedOption =
+                    //       Map<String, dynamic>.from(t['selectedOption'] ?? {});
+                    //
+                    //   return _billRow(title, selectedOption, "₹ $amount");
+                    // }).toList(),
+                    ...tests.expand((t) {
                       final title = t["title"]?.toString() ?? "-";
                       final amount = t["amount"]?.toString() ?? "0";
+                      final selectedOption = t['selectedOptionAmounts'];
 
-                      return _billRow(title, "₹ $amount");
+                      final bool showSubRows = hasSubAmounts(selectedOption);
+                      final entries = showSubRows
+                          ? parseSelectedOption(selectedOption)
+                          : <MapEntry<String, num>>[];
+
+                      return [
+                        // ✅ ALWAYS show parent row
+                        _billRow(title, amount, isBold: true, fontSize: 16),
+
+                        // ✅ Show sub rows ONLY for new data
+                        if (showSubRows)
+                          ...entries.map(
+                            (e) => _subBillRow(e.key, e.value.toString()),
+                          ),
+
+                        const SizedBox(height: 8),
+                      ];
                     }).toList(),
+
+                    //   ...tests.asMap().entries.map((entry) {
+                    //     final index = entry.key;
+                    //     final test = entry.value;
+                    //     final bool canRemove = tests.length > 1;
+                    //
+                    //     return Row(
+                    //       children: [
+                    //         Expanded(
+                    //           child: Text(
+                    //             test["title"],
+                    //             style: const TextStyle(fontSize: 15),
+                    //           ),
+                    //         ),
+                    //         Text("₹ ${test["amount"]}"),
+                    //         // TextButton.icon(
+                    //         //   onPressed: () {
+                    //         //     _updateTestAndScan();
+                    //         //   },
+                    //         //   icon: const Icon(
+                    //         //     Icons.remove_circle_outline,
+                    //         //     size: 20,
+                    //         //     color: Colors.redAccent,
+                    //         //   ),
+                    //         //   label: const Text(
+                    //         //     "",
+                    //         //     style: TextStyle(
+                    //         //       color: Colors.redAccent,
+                    //         //       fontSize: 13,
+                    //         //     ),
+                    //         //   ),
+                    //         // ),
+                    //       ],
+                    //     );
+                    //   }),
                   ],
 
                   // _billRow("Discount", "₹0.00"),
@@ -505,45 +743,85 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
                   // 💰 Pay Button
                   widget.index == 0
-                      ? Center(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: _isProcessing ? 160 : 200,
-                            child: ElevatedButton.icon(
+                      ? Row(
+                          children: [
+                            Center(
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: _isProcessing ? 120 : 140,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: themeColor,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.receipt_long,
+                                    color: Colors.white,
+                                  ),
+                                  label: _isProcessing
+                                      ? const Text(
+                                          "Processing...",
+                                          style: TextStyle(color: Colors.white),
+                                        )
+                                      : const Text(
+                                          "Pay Bill",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                  onPressed: _isProcessing
+                                      ? null
+                                      : _handlePayment,
+                                ),
+                              ),
+                            ),
+                            Spacer(),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                final paymentId = widget.fee['id'];
+                                final consultationId =
+                                    widget.fee['consultation_Id'];
+                                final staffId = prefs.getString('userId');
+                                _showCancelDialog(
+                                  context,
+                                  paymentId: paymentId,
+                                  consultationId: consultationId,
+                                  staffId: staffId,
+                                );
+                              },
+                              icon: const Icon(Icons.cancel, size: 22),
+                              label: const Text(
+                                "Cancel ",
+                                style: TextStyle(fontSize: 18),
+                              ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: themeColor,
+                                backgroundColor: Colors.redAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 40,
-                                  vertical: 14,
-                                ),
                               ),
-                              icon: const Icon(
-                                Icons.receipt_long,
-                                color: Colors.white,
-                              ),
-                              label: _isProcessing
-                                  ? const Text(
-                                      "Processing...",
-                                      style: TextStyle(color: Colors.white),
-                                    )
-                                  : const Text(
-                                      "Pay Bill",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                              onPressed: _isProcessing ? null : _handlePayment,
                             ),
-                          ),
+                          ],
                         )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
+                            // 🔹 Print Button
                             ElevatedButton.icon(
                               onPressed: () async {
                                 final pdf = await _buildPdf();
@@ -565,13 +843,92 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blueAccent.shade400,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 22,
+                                  horizontal: 12,
                                   vertical: 12,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 elevation: 5,
+                              ),
+                            ),
+                            InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () async {
+                                if (widget.fee['type'] == 'REGISTRATIONFEE') {
+                                  await WhatsAppSendPaymentBill.sendRegistrationBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    registrationFee:
+                                        widget
+                                            .fee['Consultation']?['registrationFee'] ??
+                                        0,
+                                    consultationFee:
+                                        widget
+                                            .fee['Consultation']?['consultationFee'] ??
+                                        0,
+                                    emergencyFee:
+                                        widget
+                                            .fee['Consultation']?['emergencyFee'] ??
+                                        0,
+                                    sugarTestFee:
+                                        widget
+                                            .fee['Consultation']?['sugarTestFee'] ??
+                                        0,
+                                  );
+                                } else if (widget.fee['type'] ==
+                                    'TESTINGFEESANDSCANNINGFEE') {
+                                  final List tests =
+                                      widget
+                                          .fee['TestingAndScanningPatients'] ??
+                                      [];
+
+                                  if (tests.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "No testing data to send",
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  await WhatsAppSendPaymentBill.sendTestingBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    tests: List<Map<String, dynamic>>.from(
+                                      tests,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const FaIcon(
+                                  FontAwesomeIcons.whatsapp,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
                               ),
                             ),
 
@@ -599,7 +956,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 22,
+                                  horizontal: 12,
                                   vertical: 12,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -628,16 +985,181 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
+  Widget feeRowWithRemove({
+    required String title,
+    required num? amount,
+    required bool removable,
+    VoidCallback? onRemove,
+  }) {
+    if (amount == null || amount == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(child: feeRow(title, amount)),
+
+          /// Remove Icon
+          if (widget.index != 1) ...[
+            IconButton(
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 20,
+                color: removable ? Colors.redAccent : Colors.grey,
+              ),
+              onPressed: removable ? onRemove : null, // 🔒 disable others
+              tooltip: removable ? "Remove $title" : null,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  //////////////////////////////////////////////feee///////////////////////////
+  Widget feeRow(String title, num? amount, {bool isTotal = false}) {
+    if (amount == null || amount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: isTotal ? 17 : 15,
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+                color: isTotal ? Colors.black : Colors.grey[800],
+              ),
+            ),
+          ),
+          Text(
+            "₹ ${amount.toStringAsFixed(0)}",
+            style: TextStyle(
+              fontSize: isTotal ? 17 : 15,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+              color: isTotal ? Colors.green[700] : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(
+    BuildContext context, {
+    required int paymentId,
+    required int consultationId,
+    required String? staffId,
+  }) {
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              title: const Text(
+                "Cancel Confirmation",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                "Are you sure you want to cancel this payment and consultation?",
+              ),
+              actions: [
+                /// ❌ CANCEL BUTTON
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+
+                /// ✅ OK BUTTON WITH LOADER
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() => isLoading = true);
+
+                          try {
+                            final _dateTime = DateTime.now();
+
+                            /// 🔹 Update Payment
+                            await PaymentService().updatePayment(paymentId, {
+                              'status': 'CANCELLED',
+                              'staff_Id': staffId.toString(),
+                              'updatedAt': _dateTime.toString(),
+                            });
+
+                            /// 🔹 Update Consultation
+                            await ConsultationService().updateConsultation(
+                              consultationId,
+                              {'status': 'CANCELLED'},
+                            );
+
+                            Navigator.pop(ctx); // close dialog
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("❌ Cancelled successfully"),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                            Navigator.pop(context, true);
+                          } catch (e) {
+                            setState(() => isLoading = false);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Failed to cancel"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text("OK", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<pw.Document> _buildPdf() async {
     final ttf = await PdfGoogleFonts.notoSansRegular();
     final ttfBold = await PdfGoogleFonts.notoSansBold();
     final pdf = pw.Document();
 
-    // ---------------- COLORS ----------------
+    final logoo = pw.MemoryImage((await http.get(Uri.parse(logo!))).bodyBytes);
+
     final blue = PdfColor.fromHex("#0A3D91");
     final lightBlue = PdfColor.fromHex("#1E5CC4");
-
-    // ---------------- SAFE LOGO ----------------
     pw.Widget logoWidget = pw.SizedBox(width: 110, height: 50);
 
     try {
@@ -653,15 +1175,15 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     } catch (_) {
       logoWidget = pw.SizedBox(width: 110, height: 50);
     }
-
     pdf.addPage(
       pw.Page(
         theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
+        // margin: const pw.EdgeInsets.all(28),
         build: (context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // ================= HEADER =================
+              // ------------------------ HEADER ------------------------
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -670,7 +1192,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        hospitalName ?? "",
+                        "$hospitalName",
                         style: pw.TextStyle(
                           fontSize: 24,
                           fontWeight: pw.FontWeight.bold,
@@ -679,8 +1201,8 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       ),
                       pw.SizedBox(height: 3),
                       pw.Text(
-                        hospitalPlace ?? "",
-                        style: const pw.TextStyle(fontSize: 11),
+                        "$hospitalPlace",
+                        style: pw.TextStyle(fontSize: 11),
                       ),
                       pw.Text(
                         "Accurate  |  Caring  |  Instant",
@@ -691,6 +1213,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       ),
                     ],
                   ),
+
                   pw.Container(
                     width: 120,
                     height: 50,
@@ -704,7 +1227,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
               pw.Divider(),
               pw.SizedBox(height: 18),
 
-              // ================= PATIENT INFO =================
+              // ------------------------ PATIENT INFO BOX ------------------------
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
@@ -712,41 +1235,47 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                   border: pw.Border.all(color: PdfColor.fromHex("#D9D9D9")),
                 ),
                 child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
                   children: [
+                    // LEFT SIDE
                     pw.Expanded(
+                      flex: 1,
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
                             "Name: ${nameController.text}",
-                            style: const pw.TextStyle(fontSize: 11),
+                            style: pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
-                            "PID: ${widget.fee['Patient']['user_Id']}",
-                            style: const pw.TextStyle(fontSize: 11),
+                            "PID: ${widget.fee['Patient']['id']}",
+                            style: pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "Phone: ${cellController.text}",
-                            style: const pw.TextStyle(fontSize: 11),
+                            style: pw.TextStyle(fontSize: 11),
                           ),
                         ],
                       ),
                     ),
+
+                    // RIGHT SIDE
                     pw.Expanded(
+                      flex: 1,
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
                           pw.Text(
                             "Age: ${calculateAge(dobController.text)}",
-                            style: const pw.TextStyle(fontSize: 11),
+                            style: pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "Sex: ${widget.fee['Patient']['gender']}",
-                            style: const pw.TextStyle(fontSize: 11),
+                            style: pw.TextStyle(fontSize: 11),
                           ),
                           pw.Text(
                             "Date: ${getFormattedDate(DateTime.now().toString())}",
-                            style: const pw.TextStyle(fontSize: 11),
+                            style: pw.TextStyle(fontSize: 11),
                           ),
                         ],
                       ),
@@ -757,7 +1286,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 20),
 
-              // ================= TITLE BAR =================
+              // ------------------------ TEST TITLE BAR ------------------------
               pw.Container(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.symmetric(vertical: 8),
@@ -779,7 +1308,8 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 20),
 
-              // ================= TABLE HEADER =================
+              // ------------------------ TABLE HEADER ------------------------
+              // Header
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(
                   vertical: 10,
@@ -788,7 +1318,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                 decoration: pw.BoxDecoration(
                   color: PdfColors.grey300,
                   borderRadius: pw.BorderRadius.circular(4),
-                  border: pw.Border.all(color: PdfColors.grey600),
+                  border: pw.Border.all(color: PdfColors.grey600, width: 1),
                 ),
                 child: pw.Row(
                   children: [
@@ -821,63 +1351,245 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 6),
 
-              // ================= MAIN FEE =================
-              pw.Row(
-                children: [
-                  pw.Expanded(
-                    flex: 3,
-                    child: pw.Text(
-                      widget.fee['reason'],
-                      style: const pw.TextStyle(fontSize: 11),
-                    ),
+              // Registration Fee
+              // pw.Container(
+              //   padding: const pw.EdgeInsets.symmetric(vertical: 6),
+              //
+              //   // child: pw.Row(
+              //   //   children: [
+              //   //     pw.Expanded(
+              //   //       flex: 3,
+              //   //       child: pw.Text(
+              //   //         "${widget.fee['reason']}", // Registration or Consultation
+              //   //         style: const pw.TextStyle(fontSize: 11),
+              //   //       ),
+              //   //     ),
+              //   //     pw.Expanded(
+              //   //       flex: 1,
+              //   //       child: pw.Align(
+              //   //         alignment: pw.Alignment.centerRight,
+              //   //         child: pw.Text(
+              //   //           "₹ ${widget.fee['amount']}",
+              //   //           style: const pw.TextStyle(fontSize: 11),
+              //   //         ),
+              //   //       ),
+              //   //     ),
+              //   //   ],
+              //   // ),
+              // ),
+              if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
+                pw.Table(
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(3),
+                    1: const pw.FlexColumnWidth(1),
+                  },
+                  children: buildFeeRows(
+                    registrationFee:
+                        widget.fee['Consultation']?['registrationFee'],
+                    consultationFee:
+                        widget.fee['Consultation']?['consultationFee'],
+                    emergencyFee: widget.fee['Consultation']?['emergencyFee'],
+                    sugarTestFee: widget.fee['Consultation']?['sugarTestFee'],
                   ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Align(
-                      alignment: pw.Alignment.centerRight,
-                      child: pw.Text(
-                        "₹ ${widget.fee['amount']}",
-                        style: const pw.TextStyle(fontSize: 11),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
 
               pw.Divider(),
 
-              // ================= TEST LIST =================
+              pw.SizedBox(height: 4),
+
+              // Tests List
+              // if (widget.fee['TestingAndScanningPatients'] != null)
+              //   ...widget.fee['TestingAndScanningPatients'].map<pw.Widget>((t) {
+              //     return pw.Container(
+              //       padding: const pw.EdgeInsets.symmetric(vertical: 6),
+              //       child: pw.Row(
+              //         children: [
+              //           pw.Expanded(
+              //             flex: 3,
+              //             child: pw.Text(
+              //               "${t['title']}",
+              //               style: const pw.TextStyle(fontSize: 11),
+              //             ),
+              //           ),
+              //           pw.Expanded(
+              //             flex: 1,
+              //             child: pw.Align(
+              //               alignment: pw.Alignment.centerRight,
+              //               child: pw.Text(
+              //                 "₹ ${t['amount']}",
+              //                 style: const pw.TextStyle(fontSize: 11),
+              //               ),
+              //             ),
+              //           ),
+              //         ],
+              //       ),
+              //     );
+              //   }).toList(),
               if (widget.fee['TestingAndScanningPatients'] != null)
                 ...widget.fee['TestingAndScanningPatients'].map<pw.Widget>((t) {
-                  return pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(vertical: 6),
-                    child: pw.Row(
-                      children: [
-                        pw.Expanded(
-                          flex: 3,
-                          child: pw.Text(
-                            t['title'],
-                            style: const pw.TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        pw.Expanded(
-                          flex: 1,
-                          child: pw.Align(
-                            alignment: pw.Alignment.centerRight,
+                  final String title = t['title']?.toString() ?? '-';
+                  final num testAmount = t['amount'] ?? 0;
+                  final dynamic selectedOption = t['selectedOptionAmounts'];
+
+                  final List<pw.Widget> rows = [];
+
+                  // 🔹 Parent test title (bold)
+                  rows.add(
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                      child: pw.Row(
+                        children: [
+                          pw.Expanded(
+                            flex: 3,
                             child: pw.Text(
-                              "₹ ${t['amount']}",
-                              style: const pw.TextStyle(fontSize: 11),
+                              title,
+                              style: pw.TextStyle(
+                                fontSize: 11,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Align(
+                              alignment: pw.Alignment.centerRight,
+                              child: pw.Text(
+                                testAmount > 0 ? "₹ $testAmount" : "",
+                                style: pw.TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  );
+
+                  bool hasOptions = false;
+
+                  // 🔹 CASE 1: Map options
+                  if (selectedOption is Map) {
+                    selectedOption.forEach((key, value) {
+                      final num amt = num.tryParse(value.toString()) ?? 0;
+                      if (amt > 0) {
+                        hasOptions = true;
+                        rows.add(
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.only(left: 10, top: 2),
+                            child: pw.Row(
+                              children: [
+                                pw.Expanded(
+                                  flex: 3,
+                                  child: pw.Text(
+                                    key.toString(),
+                                    style: const pw.TextStyle(fontSize: 10),
+                                  ),
+                                ),
+                                pw.Expanded(
+                                  flex: 1,
+                                  child: pw.Align(
+                                    alignment: pw.Alignment.centerRight,
+                                    child: pw.Text(
+                                      "₹ $amt",
+                                      style: const pw.TextStyle(fontSize: 10),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                    });
+                  }
+                  // 🔹 CASE 2: List options
+                  else if (selectedOption is List) {
+                    for (final o in selectedOption) {
+                      if (o is Map) {
+                        final String name = o['name']?.toString() ?? '';
+                        final num amt = o['amount'] ?? 0;
+
+                        if (name.isNotEmpty && amt > 0) {
+                          hasOptions = true;
+                          rows.add(
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.only(
+                                left: 10,
+                                top: 2,
+                              ),
+                              child: pw.Row(
+                                children: [
+                                  pw.Expanded(
+                                    flex: 3,
+                                    child: pw.Text(
+                                      name,
+                                      style: const pw.TextStyle(fontSize: 10),
+                                    ),
+                                  ),
+                                  pw.Expanded(
+                                    flex: 1,
+                                    child: pw.Align(
+                                      alignment: pw.Alignment.centerRight,
+                                      child: pw.Text(
+                                        "₹ $amt",
+                                        style: const pw.TextStyle(fontSize: 10),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  }
+
+                  // 🔹 CASE 3: No options → show total
+                  if (!hasOptions && testAmount > 0) {
+                    rows.add(
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(left: 10, top: 2),
+                        child: pw.Row(
+                          children: [
+                            pw.Expanded(
+                              flex: 3,
+                              child: pw.Text(
+                                'Amount',
+                                style: const pw.TextStyle(fontSize: 10),
+                              ),
+                            ),
+                            pw.Expanded(
+                              flex: 1,
+                              child: pw.Align(
+                                alignment: pw.Alignment.centerRight,
+                                child: pw.Text(
+                                  "₹ $testAmount",
+                                  style: const pw.TextStyle(fontSize: 10),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  // 🔹 Space after each test
+                  rows.add(pw.SizedBox(height: 6));
+
+                  return pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: rows,
                   );
                 }).toList(),
 
-              pw.SizedBox(height: 14),
+              pw.SizedBox(height: 12),
 
-              // ================= TOTAL =================
+              // ------------------------ TOTAL ------------------------
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
@@ -892,7 +1604,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
               pw.SizedBox(height: 30),
 
-              // ================= FOOTER =================
+              // ------------------------ FOOTER ------------------------
               pw.Center(
                 child: pw.Text(
                   "Thank you for choosing Green Valley Hospital",
@@ -909,6 +1621,75 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     );
 
     return pdf;
+  }
+
+  List<pw.TableRow> buildFeeRows({
+    required num registrationFee,
+    required num consultationFee,
+    required num emergencyFee,
+    required num sugarTestFee,
+  }) {
+    final rows = <pw.TableRow>[];
+    // 🔹 Section Header
+    rows.add(
+      pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(top: 6, bottom: 10, left: 8),
+            child: pw.Text(
+              "Bill Details",
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.SizedBox(),
+        ],
+      ),
+    );
+
+    void addRow(String title, num? amount) {
+      if (amount == null || amount == 0) return;
+
+      rows.add(
+        pw.TableRow(
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(
+                vertical: 6,
+                horizontal: 8,
+              ),
+              child: pw.Text(
+                title,
+                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(
+                vertical: 6,
+                horizontal: 8,
+              ),
+              child: pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.Text(
+                  "₹ ${amount.toStringAsFixed(0)}",
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 🔹 Fee Rows
+    addRow("Registration Fee", registrationFee);
+    addRow("Consultation Fee", consultationFee);
+    addRow("Emergency Fee", emergencyFee);
+    addRow("Sugar Test Fee", sugarTestFee);
+
+    return rows;
   }
 
   // --- UI Helpers ---
@@ -939,25 +1720,51 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
-  Widget _billRow(String label, String value) {
+  Widget _billRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    double fontSize = 15,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Expanded(
-            flex: 3,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+              ),
             ),
           ),
-          Expanded(
-            flex: 1,
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
+          Text(
+            "₹ $value",
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _subBillRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              "• $label",
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            ),
+          ),
+          Text(
+            "₹ $value",
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
           ),
         ],
       ),

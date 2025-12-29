@@ -102,12 +102,19 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     String? sugar,
     String? height,
     String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
   }) {
+    print('sugar $sugar bb $bloodPressure');
     return _isValid(temperature) ||
         _isValid(bloodPressure) ||
         _isValid(sugar) ||
         _isValid(height) ||
-        _isValid(weight);
+        _isValid(weight) ||
+        _isValid(BMI) ||
+        _isValid(PK) ||
+        _isValid(SpO2);
   }
 
   bool _isValid(String? value) {
@@ -441,6 +448,9 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     final sugar = consultation['sugar'] ?? '_';
     final height = consultation['height'].toString() ?? '_';
     final weight = consultation['weight'].toString() ?? '_';
+    final BMI = consultation['BMI'].toString() ?? '_';
+    final PK = consultation['PK'].toString() ?? '_';
+    final SpO2 = consultation['SPO2'].toString() ?? '_';
 
     // final LabId = consultation['TeatingAndScanningPatient'][0]['staff_Id'];
 
@@ -606,6 +616,9 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
               sugar: sugar,
               height: height,
               weight: weight,
+              BMI: BMI,
+              PK: PK,
+              SpO2: SpO2,
             ))
               _buildVitalsDetailsCards(
                 temperature: temperature,
@@ -613,6 +626,9 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                 sugar: sugar,
                 height: height,
                 weight: weight,
+                BMI: BMI,
+                PK: PK,
+                SpO2: SpO2,
               ),
 
             const SizedBox(height: 20),
@@ -1239,6 +1255,9 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     String? sugar,
     String? height,
     String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
   }) {
     return Card(
       elevation: 4,
@@ -1303,6 +1322,24 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                     icon: Icons.height,
                     label: "Height",
                     value: "$height cm",
+                  ),
+                if (_isValid(BMI))
+                  _vitalTile(
+                    icon: Icons.calculate,
+                    label: "BMI",
+                    value: "$BMI BMI",
+                  ),
+                if (_isValid(PK))
+                  _vitalTile(
+                    icon: Icons.science,
+                    label: "PR",
+                    value: "$PK bpm",
+                  ),
+                if (_isValid(SpO2))
+                  _vitalTile(
+                    icon: Icons.monitor_heart,
+                    label: "SpO₂",
+                    value: "$SpO2 %",
                   ),
               ],
             ),

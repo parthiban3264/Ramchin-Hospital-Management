@@ -803,6 +803,7 @@ class _ScanningPageState extends State<ScanningPage> {
           "result": '',
           "amount": scanData['totalAmount'],
           "selectedOptions": scanData['options'].toList(),
+          "selectedOptionAmounts": scanData['selectedOptionsAmount'],
           "createdAt": _dateTime,
         };
 
@@ -826,13 +827,7 @@ class _ScanningPageState extends State<ScanningPage> {
           'updatedAt': _dateTime.toString(),
         },
       );
-      if (consultation != null) {
-        Navigator.pop(context, true);
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to Submit Scans')));
-      }
+      Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Scan submitted!"),
@@ -993,19 +988,50 @@ class _ScanningPageState extends State<ScanningPage> {
               activeColor: primaryColor,
               title: Text('$name ( ₹ $price )', style: TextStyle(fontSize: 14)),
               controlAffinity: ListTileControlAffinity.trailing,
+              // onChanged: (v) {
+              //   setState(() {
+              //     final mutable = Set<String>.from(selectedOptions);
+              //     if (v == true) {
+              //       mutable.add(name);
+              //     } else {
+              //       mutable.remove(name);
+              //     }
+              //     savedScans[scanName] = {
+              //       'options': mutable,
+              //       'description': savedScans[scanName]?['description'] ?? '',
+              //       'totalAmount': _calculateTotalAmount(scan, mutable),
+              //     };
+              //   });
+              // },
               onChanged: (v) {
                 setState(() {
-                  final mutable = Set<String>.from(selectedOptions);
+                  // Always initialize safely
+                  final Map<String, int> optionAmountMap =
+                      savedScans[scanName]?['selectedOptionsAmount'] != null
+                      ? Map<String, int>.from(
+                          savedScans[scanName]!['selectedOptionsAmount'],
+                        )
+                      : <String, int>{};
+
                   if (v == true) {
-                    mutable.add(name);
+                    optionAmountMap[name] = price;
                   } else {
-                    mutable.remove(name);
+                    optionAmountMap.remove(name);
                   }
-                  savedScans[scanName] = {
-                    'options': mutable,
-                    'description': savedScans[scanName]?['description'] ?? '',
-                    'totalAmount': _calculateTotalAmount(scan, mutable),
-                  };
+
+                  if (optionAmountMap.isEmpty) {
+                    savedScans.remove(scanName);
+                  } else {
+                    savedScans[scanName] = {
+                      'options': optionAmountMap.keys.toSet(),
+                      'selectedOptionsAmount': optionAmountMap,
+                      'description': savedScans[scanName]?['description'] ?? '',
+                      'totalAmount': optionAmountMap.values.fold<int>(
+                        0,
+                        (a, b) => a + b,
+                      ),
+                    };
+                  }
                 });
               },
             );

@@ -127,15 +127,15 @@ class _UltersoundPageState extends State<UltersoundPage>
       resultMap[key] = controller.text.trim();
     });
     bool hasEmpty = resultMap.values.any((v) => v.isEmpty);
-    if (_pickedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("At least one image is required."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
+    // if (_pickedImages.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text("At least one image is required."),
+    //       backgroundColor: Colors.redAccent,
+    //     ),
+    //   );
+    //   return;
+    // }
     if (hasEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -314,12 +314,13 @@ class _UltersoundPageState extends State<UltersoundPage>
 
     final doctorName = patient['doctor']?['name'] ?? '-';
 
-    final createdAt = record['createdAt'] ?? 'N/A';
-    final title = record['title'] ?? 'N/A';
+    final createdAt = record['createdAt'] ?? '-';
+    final title = record['title'] ?? '-';
+    final reason = record['reason'] ?? '-';
     final dob = _formatDob(patient['dob']);
     final age = _calculateAge(patient['dob']);
-    final gender = patient['gender'] ?? 'N/A';
-    final bloodGroup = patient['bldGrp'] ?? 'N/A';
+    final gender = patient['gender'] ?? '-';
+    final bloodGroup = patient['bldGrp'] ?? '-';
 
     // 🩻 Selected UltraSound Options
     final selectedOptions = List<String>.from(record['selectedOptions'] ?? []);
@@ -418,6 +419,7 @@ class _UltersoundPageState extends State<UltersoundPage>
                   _buildMedicalCard(
                     title: title,
                     doctorName: doctorName,
+                    reason: reason,
                     doctorId: doctorId,
                     selectedOptions: selectedOptions,
                   ),
@@ -633,6 +635,7 @@ class _UltersoundPageState extends State<UltersoundPage>
   Widget _buildMedicalCard({
     required String title,
     required String doctorName,
+    required String reason,
     required String doctorId,
     required List<String> selectedOptions,
   }) {
@@ -682,6 +685,43 @@ class _UltersoundPageState extends State<UltersoundPage>
 
           _infoRow("Doctor Name", doctorName),
           _infoRow("Doctor ID", doctorId),
+          const SizedBox(height: 5),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text(
+                      'Doctor Description ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFBF955E),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  reason,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           const Divider(height: 30, color: Colors.grey),
           _sectionHeader("Selected UltraSound Options"),

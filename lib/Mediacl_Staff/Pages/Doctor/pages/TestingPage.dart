@@ -148,10 +148,11 @@ class _TestingPageState extends State<TestingPage> {
           "scheduleDate": DateTime.now().toIso8601String(),
           "status": "PENDING",
           "paymentStatus": false,
-          'reason': descController.text.trim(),
+          'reason': testData['description'],
           "result": '',
           "amount": testData['totalAmount'],
           "selectedOptions": testData['options'].toList(),
+          "selectedOptionAmounts": testData['selectedOptionsAmount'],
           "createdAt": _dateTime.toString(),
         };
 
@@ -606,41 +607,75 @@ class _TestingPageState extends State<TestingPage> {
                     // NORMAL CHECKBOX VIEW
                     : CheckboxListTile(
                         value: selected,
+                        // onChanged: (v) {
+                        //   setState(() {
+                        //     final mutable = Set<String>.from(selectedOptions);
+                        //     if (v == true) {
+                        //       mutable.add(name);
+                        //     } else {
+                        //       mutable.remove(name);
+                        //     }
+                        //
+                        //     // savedTests[testName] = {
+                        //     //   'options': mutable,
+                        //     //   'description':
+                        //     //       savedTests[testName]?['description'] ?? '',
+                        //     //   'totalAmount': _calculateTotalAmount(
+                        //     //     test,
+                        //     //     mutable,
+                        //     //   ),
+                        //     // };
+                        //     if (mutable.isEmpty) {
+                        //       savedTests.remove(
+                        //         testName,
+                        //       ); // ⬅ remove completely if empty
+                        //     } else {
+                        //       savedTests[testName] = {
+                        //         'options': mutable,
+                        //         'description':
+                        //             savedTests[testName]?['description'] ?? '',
+                        //         'totalAmount': _calculateTotalAmount(
+                        //           test,
+                        //           mutable,
+                        //         ),
+                        //       };
+                        //     }
+                        //   });
+                        // },
                         onChanged: (v) {
                           setState(() {
-                            final mutable = Set<String>.from(selectedOptions);
+                            // Always initialize safely
+                            final Map<String, int> optionAmountMap =
+                                savedTests[testName]?['selectedOptionsAmount'] !=
+                                    null
+                                ? Map<String, int>.from(
+                                    savedTests[testName]!['selectedOptionsAmount'],
+                                  )
+                                : <String, int>{};
+
                             if (v == true) {
-                              mutable.add(name);
+                              optionAmountMap[name] = price;
                             } else {
-                              mutable.remove(name);
+                              optionAmountMap.remove(name);
                             }
 
-                            // savedTests[testName] = {
-                            //   'options': mutable,
-                            //   'description':
-                            //       savedTests[testName]?['description'] ?? '',
-                            //   'totalAmount': _calculateTotalAmount(
-                            //     test,
-                            //     mutable,
-                            //   ),
-                            // };
-                            if (mutable.isEmpty) {
-                              savedTests.remove(
-                                testName,
-                              ); // ⬅ remove completely if empty
+                            if (optionAmountMap.isEmpty) {
+                              savedTests.remove(testName);
                             } else {
                               savedTests[testName] = {
-                                'options': mutable,
+                                'options': optionAmountMap.keys.toSet(),
+                                'selectedOptionsAmount': optionAmountMap,
                                 'description':
                                     savedTests[testName]?['description'] ?? '',
-                                'totalAmount': _calculateTotalAmount(
-                                  test,
-                                  mutable,
+                                'totalAmount': optionAmountMap.values.fold<int>(
+                                  0,
+                                  (a, b) => a + b,
                                 ),
                               };
                             }
                           });
                         },
+
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 4,

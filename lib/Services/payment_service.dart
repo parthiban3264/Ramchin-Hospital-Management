@@ -118,16 +118,18 @@ class PaymentService {
         // Filter only Pending payments
         final pending = rawList.where((item) {
           final status = item['status']?.toString().toLowerCase();
-          return status == 'pending' || status == 'paid';
+          return status == 'pending' ||
+              status == 'paid' ||
+              status == 'cancelled';
         }).toList();
 
         // Sort by createdAt (oldest first)
-        pending.sort((a, b) {
+        pending.sort((b, a) {
           final aTime =
               DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
           final bTime =
               DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
-          return aTime.compareTo(bTime);
+          return bTime.compareTo(aTime);
         });
 
         return pending;

@@ -297,11 +297,94 @@ class _ScanReportCardState extends State<ScanReportCard> {
                   _buildSectionTitle("SCAN IMAGES"),
 
                   imagesWithType.isEmpty
-                      ? const Text(
-                          "No images available",
-                          style: TextStyle(fontSize: 16),
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              SizedBox(height: 10),
+                              Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 38,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "No images available",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         )
                       : _buildImageGrid(imagesWithType),
+                  const SizedBox(height: 8),
+                  const Text(
+                    " IMPRESSION ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Color(0xFF0E3B7D),
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < testDetails.length; i++) ...[
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          // spacing between sections
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${testDetails[i]['title'] ?? '-'} : ',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0E3B7D),
+                                  height: 1.4,
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              // 🧠 Impression
+                              Expanded(
+                                child: Text(
+                                  testDetails[i]['results'] ?? '-',
+                                  maxLines: 5,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.4,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
 
                   const SizedBox(height: 10),
 
@@ -763,9 +846,25 @@ class _ScanReportCardState extends State<ScanReportCard> {
   Widget _buildImageGrid(List<Map<String, String>> imagesWithType) {
     if (imagesWithType.isEmpty) {
       return const Center(
-        child: Text(
-          "No images available",
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 10),
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 48,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 8),
+            Text(
+              "No images available",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       );
     }
