@@ -14,7 +14,7 @@ const tealGreen = Color(0xFF00897B);
 const softGrey = Color(0xFFF5F7FA);
 
 class AddTestPage extends StatefulWidget {
-  const AddTestPage({Key? key}) : super(key: key);
+  const AddTestPage({super.key});
 
   @override
   State<AddTestPage> createState() => _AddTestPageState();
@@ -74,7 +74,7 @@ class _AddTestPageState extends State<AddTestPage>
   Future<void> fetchAllOptionName() async {
     setState(() => isLoading = true);
     optionList = await ScanTestGetService().getAllUnitReference('TEST');
-
+    print('optionList $optionList');
     setState(() => isLoading = false);
   }
 
@@ -106,11 +106,13 @@ class _AddTestPageState extends State<AddTestPage>
   Future<void> fetchScanTests() async {
     setState(() => isLoading = true);
     scanTestList = await ScanTestGetService().fetchTestAndScan('TEST');
+    print('scanTestList $scanTestList');
     setState(() => isLoading = false);
   }
 
   /// ---------------- SAVE ----------------
   Future<void> saveScanTest() async {
+    final prefs = await SharedPreferences.getInstance();
     FocusManager.instance.primaryFocus?.unfocus(); // ✅ FIX
 
     if (!_formKey.currentState!.validate()) return;
@@ -119,11 +121,11 @@ class _AddTestPageState extends State<AddTestPage>
       return;
     }
 
-    final hospitalId = _prefs?.getString('hospitalId');
+    final hospitalId = prefs.getString('hospitalId') ?? '';
     setState(() => isLoading = true);
 
     final testData = {
-      "hospital_Id": int.parse(hospitalId!),
+      "hospital_Id": int.parse(hospitalId),
       "title": _titleController.text,
       "type": "TEST",
       "options": selectedOptions,
@@ -135,6 +137,7 @@ class _AddTestPageState extends State<AddTestPage>
     if (editingId == null) {
       await ScanTestGetService().createTestScan([testData]);
     } else {
+      print('work');
       await ScanTestGetService().updateScanTest(editingId!, testData);
     }
     setState(() => isLoading = false);
@@ -185,6 +188,7 @@ class _AddTestPageState extends State<AddTestPage>
   //   });
   // }
   void editScanTest(dynamic item) {
+    print('item ${item['id']}');
     setState(() {
       editingId = item['id'];
       _titleController.text = item['title'];
@@ -361,8 +365,10 @@ class _AddTestPageState extends State<AddTestPage>
                   ElevatedButton(
                     onPressed: () {
                       if (editOption != null) {
-                        editOption['id'] ??=
-                            selectedOptionId; // ✅ keep or set ID
+                        editOption['id'] ??= selectedOptionId;
+                        print(
+                          'selectedOptionId $selectedOptionId editOption $editOption',
+                        ); // ✅ keep or set ID
 
                         editOption['name'] = nameCtrl.text;
                         editOption['price'] = double.parse(priceCtrl.text);
@@ -454,7 +460,7 @@ class _AddTestPageState extends State<AddTestPage>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.orange.withOpacity(0.3),
+                      color: Colors.orange.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -506,7 +512,7 @@ class _AddTestPageState extends State<AddTestPage>
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 4,
-                        shadowColor: primaryBlue.withOpacity(0.2),
+                        shadowColor: primaryBlue.withValues(alpha: 0.2),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -516,7 +522,7 @@ class _AddTestPageState extends State<AddTestPage>
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: primaryBlue.withOpacity(0.1),
+                                  color: primaryBlue.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 padding: const EdgeInsets.all(12),
@@ -529,7 +535,7 @@ class _AddTestPageState extends State<AddTestPage>
                               const SizedBox(width: 16),
                               const Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
                                     "Test Details",
                                     style: TextStyle(
@@ -562,7 +568,7 @@ class _AddTestPageState extends State<AddTestPage>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     elevation: 6,
-                    shadowColor: primaryBlue.withOpacity(0.15),
+                    shadowColor: primaryBlue.withValues(alpha: 0.15),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
@@ -655,11 +661,11 @@ class _AddTestPageState extends State<AddTestPage>
                           //     vertical: 14,
                           //   ),
                           //   decoration: BoxDecoration(
-                          //     color: primaryBlue.withOpacity(0.1),
+                          //     color: primaryBlue.withValues(alpha:0.1),
                           //     borderRadius: BorderRadius.circular(16),
                           //     boxShadow: [
                           //       BoxShadow(
-                          //         color: primaryBlue.withOpacity(0.05),
+                          //         color: primaryBlue.withValues(alpha:0.05),
                           //         blurRadius: 8,
                           //         offset: const Offset(0, 4),
                           //       ),
@@ -830,7 +836,7 @@ class _AddTestPageState extends State<AddTestPage>
             //     color: Colors.white,
             //     boxShadow: [
             //       BoxShadow(
-            //         color: Colors.black12.withOpacity(0.08),
+            //         color: Colors.black12.withValues(alpha:0.08),
             //         blurRadius: 12,
             //       ),
             //     ],
@@ -882,14 +888,14 @@ class _AddTestPageState extends State<AddTestPage>
           ),
           elevation: 8,
           margin: const EdgeInsets.symmetric(vertical: 6),
-          shadowColor: primaryBlue.withOpacity(0.5),
+          shadowColor: primaryBlue.withValues(alpha: 0.5),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,
             ),
             leading: CircleAvatar(
-              backgroundColor: primaryBlue.withOpacity(0.2),
+              backgroundColor: primaryBlue.withValues(alpha: 0.2),
               child: const Icon(Icons.science_outlined, color: primaryBlue),
             ),
             title: Text(

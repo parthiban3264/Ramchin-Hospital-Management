@@ -174,27 +174,27 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       builder: (_) => PaymentModal(registrationFee: amount),
     );
 
-    if (paymentResult == null) {
+    if (paymentResult == null && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
       return;
     }
-    final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
+    final String paymentMode = paymentResult?['paymentMode'] ?? 'unknown';
     final prefs = await SharedPreferences.getInstance();
 
     // ✅ Payment succeeded → update backend
     setState(() => _isProcessing = true);
-    final Staff_Id = prefs.getString('userId');
+    final staffId = prefs.getString('userId');
     final response = await PaymentService().updatePayment(paymentId, {
       'status': 'PAID',
       // 'transactionId': paymentResult['transactionId'],
-      "staff_Id": Staff_Id.toString(),
+      "staff_Id": staffId.toString(),
       "paymentType": paymentMode,
       "updatedAt": _dateTime.toString(),
     });
 
-    final Id = widget.patient['Consultation']?[0]?['id'];
+    // final Id = widget.patient['Consultation']?[0]?['id'];
     final consultationId = widget.fee['consultation_Id'];
 
     if (type == 'REGISTRATIONFEE') {
@@ -223,7 +223,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
     setState(() => _isProcessing = false);
 
-    if (response != null && response['status'] == 'success') {
+    if (response != null && response['status'] == 'success' && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('✅ Payment Successful')));
@@ -324,6 +324,10 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     final num? consultationFee = consultation?['consultationFee'];
     final num? emergencyFee = consultation?['emergencyFee'];
     final num? sugarTestFee = consultation?['sugarTestFee'];
+    final tokenNo =
+        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        ? '-'
+        : consultation['tokenNo'].toString();
     final num totalAmount =
         (registrationFee ?? 0) +
         (consultationFee ?? 0) +
@@ -389,7 +393,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -447,7 +451,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -476,6 +480,36 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                             fontSize: 13,
                             color: Colors.grey[700],
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Text(
+                        //   "Token No: ${widget.fee['Consultation']['tokenNo'] ?? '-'}",
+                        //   style: TextStyle(
+                        //     fontSize: 13,
+                        //     color: Colors.grey[700],
+                        //   ),
+                        // ),
+                        Row(
+                          mainAxisSize: MainAxisSize
+                              .min, // row takes minimal horizontal space
+                          children: [
+                            Text(
+                              'Token No: ',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            Text(
+                              tokenNo,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
                         const Divider(thickness: 1.2, height: 25),
                       ],
@@ -863,6 +897,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                                     ),
                                     patientName: nameController.text,
                                     patientId: idController.text,
+                                    tokenNo: tokenNo,
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,
                                     registrationFee:
@@ -907,6 +942,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                                     ),
                                     patientName: nameController.text,
                                     patientId: idController.text,
+                                    tokenNo: tokenNo,
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,
                                     tests: List<Map<String, dynamic>>.from(
@@ -1771,11 +1807,11 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
-  String _calculateTax(dynamic amount) {
-    if (amount == null) return "0.00";
-    double tax = (amount * 0.05);
-    return tax.toStringAsFixed(0);
-  }
+  // String _calculateTax(dynamic amount) {
+  //   if (amount == null) return "0.00";
+  //   double tax = (amount * 0.05);
+  //   return tax.toStringAsFixed(0);
+  // }
 
   String _calculateTotal(dynamic amount) {
     if (amount == null) return "0.00";
