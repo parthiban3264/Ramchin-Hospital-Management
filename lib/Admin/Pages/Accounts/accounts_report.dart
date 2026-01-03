@@ -75,7 +75,16 @@ class _AccountsReportState extends State<AccountsReport> {
   void initState() {
     super.initState();
     _loadHospitalInfo();
-    _loadPayments();
+    _initLoad();
+  }
+
+  Future<void> _initLoad() async {
+    await _loadPayments();
+
+    // 🔹 Default: current day report
+    final now = DateTime.now();
+
+    await _applyReportFilter(reportType: DateFilter.day, selectedDate: now);
   }
 
   DateTime parseAppDate(dynamic value) {
