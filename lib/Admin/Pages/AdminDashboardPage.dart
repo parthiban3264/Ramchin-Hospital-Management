@@ -29,6 +29,7 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/PetScanQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/UltersoundQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/X-RayQueuePage.dart';
+import '../../Mediacl_Staff/Pages/tracking_status/track_patient_status.dart';
 import '../../Services/admin_service.dart';
 import 'Accounts/AccountsDrawerPage.dart';
 import 'Accounts/ExpensePage.dart';
@@ -513,6 +514,101 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                               ),
                             ],
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    elevation: 8,
+                    shadowColor: Colors.black26,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 30,
+                        horizontal: 20,
+                      ),
+                      child: Column(
+                        children: [
+                          Center(
+                            child: Text(
+                              'Track Desk',
+                              style: TextStyle(
+                                color: Color(0xFF886638),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildActionItem(
+                                Icons.track_changes,
+                                "Track Patient",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const TrackingPatientStatus(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // _buildActionItem(Icons.healing, "Expense", () {
+                              //   Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //       builder: (_) => const AccountExpensePage(),
+                              //     ),
+                              //   );
+                              // }),
+                              // _buildActionItem(
+                              //   Icons.drive_folder_upload_rounded,
+                              //   "Drawing",
+                              //       () {
+                              //     Navigator.push(
+                              //       context,
+                              //       MaterialPageRoute(
+                              //         builder: (_) => const AccountDrawerPage(),
+                              //       ),
+                              //     );
+                              //   },
+                              // ),
+                            ],
+                          ),
+                          //const SizedBox(height: 25),
+                          // Row(
+                          //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          //   children: [
+                          //     _buildActionItem(Icons.bar_chart, "Finance", () {
+                          //       Navigator.push(
+                          //         context,
+                          //         MaterialPageRoute(
+                          //           builder: (_) => const FinancePage(),
+                          //         ),
+                          //       );
+                          //     }),
+                          //
+                          //     _buildActionItem(
+                          //       Icons.receipt_long,
+                          //       "Report",
+                          //           () {
+                          //         Navigator.push(
+                          //           context,
+                          //           MaterialPageRoute(
+                          //             builder: (_) => const AccountsReport(),
+                          //           ),
+                          //         );
+                          //       },
+                          //     ),
+                          //   ],
+                          // ),
                         ],
                       ),
                     ),

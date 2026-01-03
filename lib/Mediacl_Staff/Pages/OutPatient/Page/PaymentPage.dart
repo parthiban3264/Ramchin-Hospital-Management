@@ -185,7 +185,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               actions: [
                 /// ❌ NO → refresh
                 TextButton(
-                  onPressed: isPrinting...
+                  onPressed: isPrinting
                       ? null
                       : () {
                           Navigator.pop(ctx);

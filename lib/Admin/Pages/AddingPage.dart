@@ -12,6 +12,7 @@ import 'AddingPage/InjectionAddPage.dart';
 import 'AddingPage/Medicine/MedicinePage.dart';
 import 'AddingPage/StaffAddPage.dart';
 import 'AddingPage/Tonic/TonicPage.dart';
+import 'AddingPage/create_test_scan.dart';
 
 class AdminAddingPage extends StatefulWidget {
   const AdminAddingPage({super.key});
@@ -202,6 +203,14 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
               _buildSection(
                 "ADD TEST & SCAN",
                 _responsiveGrid([
+                  _buildActionItem(Icons.create, "Create Test&Scan", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreateTestScanPage(),
+                      ),
+                    );
+                  }),
                   _buildActionItem(Icons.medical_services, "Test", () {
                     Navigator.push(
                       context,

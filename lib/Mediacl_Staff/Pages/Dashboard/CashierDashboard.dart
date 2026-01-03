@@ -9,6 +9,8 @@ import '../../../Admin/Pages/Accounts/IncomeExpensePage.dart';
 import '../../../Admin/Pages/Accounts/accounts_report.dart';
 import '../../../Services/admin_service.dart';
 import '../OutPatient/Queue/FeesQueuePage.dart';
+import '../OutPatient/Queue/outer_testPayment_queue.dart';
+import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
 
 class CashierDashboardPage extends StatefulWidget {
   const CashierDashboardPage({super.key});
@@ -178,7 +180,8 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                           // Existing buttons (unchanged logic)
                           //-----------------------------------
                           if (cashierPermissionIds.contains(12) ||
-                              cashierPermissionIds.contains(13))
+                              cashierPermissionIds.contains(26) ||
+                              cashierPermissionIds.contains(27))
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -195,11 +198,34 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                       );
                                     },
                                   ),
-                                if (cashierPermissionIds.contains(13))
+                                if (cashierPermissionIds.contains(27))
                                   _buildActionItem(
-                                    Icons.healing,
-                                    "Failed Payments",
-                                    () {},
+                                    Icons.currency_rupee,
+                                    "Test Payment",
+                                    () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const FeesTestQueuePage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                if (cashierPermissionIds.contains(26))
+                                  _buildActionItem(
+                                    Icons.how_to_reg,
+                                    "register",
+                                    () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const PatientRegistrationPage(),
+                                        ),
+                                      );
+                                    },
                                   ),
                               ],
                             ),
@@ -314,8 +340,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                               ),
                             const SizedBox(height: 25),
                             if (cashierPermissionIds.contains(23) ||
-                                cashierPermissionIds.contains(24) ||
-                                cashierPermissionIds.contains(25))
+                                cashierPermissionIds.contains(24))
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
@@ -364,6 +389,37 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                 ],
                               ),
 
+                            // if (cashierPermissionIds.contains(26) )
+                            //   Row(
+                            //     mainAxisAlignment:
+                            //     MainAxisAlignment.spaceEvenly,
+                            //     children: [
+                            //       if (cashierPermissionIds.contains(26))
+                            //         _buildActionItem(Icons.money, "register", () {
+                            //           Navigator.push(
+                            //             context,
+                            //             MaterialPageRoute(
+                            //               builder: (_) =>
+                            //               const AccountIncomePage(),
+                            //             ),
+                            //           );
+                            //         }),
+                            //       // if (cashierPermissionIds.contains(22))
+                            //       //   _buildActionItem(
+                            //       //     Icons.healing,
+                            //       //     "Expense",
+                            //       //         () {
+                            //       //       Navigator.push(
+                            //       //         context,
+                            //       //         MaterialPageRoute(
+                            //       //           builder: (_) =>
+                            //       //           const AccountExpensePage(),
+                            //       //         ),
+                            //       //       );
+                            //       //     },
+                            //       //   ),
+                            //     ],
+                            //   ),
                             const SizedBox(height: 25),
                           ],
                         ),
