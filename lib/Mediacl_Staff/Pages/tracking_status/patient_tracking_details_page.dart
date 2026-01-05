@@ -16,10 +16,12 @@ class PatientTrackingDetailsPage extends StatelessWidget {
         return 0;
       case 'ONGOING':
         return 1;
-      case 'COMPLETED':
+      case 'ENDPROCESSING':
         return 2;
-      case 'CANCELLED':
+      case 'COMPLETED':
         return 3;
+      case 'CANCELLED':
+        return 4;
       default:
         return 0;
     }
@@ -31,6 +33,8 @@ class PatientTrackingDetailsPage extends StatelessWidget {
         return Colors.orange;
       case 'ONGOING':
         return Colors.blue;
+      case 'ENDPROCESSING':
+        return Color(0xEC19A6B3);
       case 'COMPLETED':
         return Colors.green;
       case 'CANCELLED':
@@ -183,7 +187,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
                 if (status.toUpperCase() == 'CANCELLED')
                   const SizedBox(height: 12),
                 if (status.toUpperCase() == 'CANCELLED')
-                  _cancelReason(consultation['cancel_reason']),
+                  _cancelReason(consultation['cancelReason']),
               ],
             ),
 
@@ -344,10 +348,17 @@ class PatientTrackingDetailsPage extends StatelessWidget {
 
   /// 🔹 STATUS TIMELINE
   Widget _statusTimeline(int activeStep, String status) {
-    final steps = ["Pending", "Ongoing", "Completed", "Cancelled"];
+    final steps = [
+      "Pending",
+      "Ongoing",
+      "End Processing",
+      "Completed",
+      "Cancelled",
+    ];
     final stepColors = {
-      "Pending": Color(0xFFFFA500), // Orange
+      "Pending": Color(0xFFEF9D06), // Orange
       "Ongoing": Color(0xFF0D6EFD), // Blue
+      "End Processing": Color(0xEC19A6B3), // Green
       "Completed": Colors.green, // Green
       "Cancelled": Color(0xFFDC3545), // Red
     };
@@ -355,6 +366,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
     final stepMessages = {
       "Pending": "Waiting for consultation",
       "Ongoing": "Treatment is ongoing",
+      "End Processing": "Final-stage testing and scanning in progress.",
       "Completed": "Treatment completed successfully",
       "Cancelled": "Treatment was cancelled",
     };
@@ -386,7 +398,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
         Color lineColor;
         if (i < activeStep) {
           lineColor = isCancelled
-              ? stepColors["Cancelled"]!.withOpacity(0.6)
+              ? stepColors["Cancelled"]!.withValues(alpha: 0.6)
               : stepColors["Completed"]!;
         } else {
           lineColor = Colors.grey.shade300;
@@ -407,7 +419,10 @@ class PatientTrackingDetailsPage extends StatelessWidget {
 
         // Message color for pending/ongoing: only active steps colored, others grey
         Color messageColor;
-        if ((step == "Pending" || step == "Ongoing") && !isActive) {
+        if ((step == "Pending" ||
+                step == "Ongoing" ||
+                step == 'End Processing') &&
+            !isActive) {
           messageColor = Colors.grey; // disabled color
         } else {
           messageColor = stepColors[step]!;
@@ -457,7 +472,8 @@ class PatientTrackingDetailsPage extends StatelessWidget {
                   if ((step == "Cancelled" && isCancelled) ||
                       (step == "Completed" && isCompleted) ||
                       step == "Pending" ||
-                      step == "Ongoing")
+                      step == "Ongoing" ||
+                      step == "End Processing")
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(

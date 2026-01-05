@@ -163,71 +163,71 @@ Future<pw.Document> buildPdf({
         isValid(SpO2);
   }
 
-  pw.Widget buildVitalsDetailsCards({
-    String? temperature,
-    String? bloodPressure,
-    String? sugar,
-    String? height,
-    String? weight,
-    String? BMI,
-    String? PK,
-    String? SpO2,
-  }) {
-    pw.Widget buildColumn(List<pw.Widget> children) {
-      return pw.Expanded(
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: children,
-        ),
-      );
-    }
-
-    return pw.Column(
-      children: [
-        pw.SizedBox(height: 5),
-        pw.Divider(),
-
-        pw.Center(
-          child: pw.Text(
-            "VITALS",
-            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-          ),
-        ),
-
-        pw.SizedBox(height: 6),
-        if (isValid(bloodPressure))
-          vitalTile(label: "BP", value: bloodPressure!),
-
-        if (isValid(sugar)) vitalTile(label: "Sugar", value: "$sugar mg/dL"),
-        pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            // LEFT TABLE
-            buildColumn([
-              if (isValid(temperature))
-                vitalTile(label: "Temp", value: "$temperature °F"),
-
-              if (isValid(PK)) vitalTile(label: "PR", value: "$PK bpm"),
-              if (isValid(SpO2)) vitalTile(label: "SpO₂", value: "$SpO2 %"),
-            ]),
-
-            pw.SizedBox(width: 10),
-
-            // RIGHT TABLE
-            buildColumn([
-              if (isValid(weight))
-                vitalTile(label: "Weight", value: "$weight kg"),
-
-              if (isValid(height))
-                vitalTile(label: "Height", value: "$height cm"),
-
-              if (isValid(BMI)) vitalTile(label: "BMI", value: BMI!),
-            ]),
-          ],
-        ),
-      ],
-    );
-  }
+  // pw.Widget buildVitalsDetailsCards({
+  //   String? temperature,
+  //   String? bloodPressure,
+  //   String? sugar,
+  //   String? height,
+  //   String? weight,
+  //   String? BMI,
+  //   String? PK,
+  //   String? SpO2,
+  // }) {
+  //   pw.Widget buildColumn(List<pw.Widget> children) {
+  //     return pw.Expanded(
+  //       child: pw.Column(
+  //         crossAxisAlignment: pw.CrossAxisAlignment.start,
+  //         children: children,
+  //       ),
+  //     );
+  //   }
+  //
+  //   return pw.Column(
+  //     children: [
+  //       pw.SizedBox(height: 5),
+  //       pw.Divider(),
+  //
+  //       // pw.Center(
+  //       //   child: pw.Text(
+  //       //     "VITALS",
+  //       //     style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+  //       //   ),
+  //       // ),
+  //
+  //       pw.SizedBox(height: 6),
+  //       if (isValid(bloodPressure))
+  //         vitalTile(label: "BP", value: bloodPressure!),
+  //
+  //       if (isValid(sugar)) vitalTile(label: "Sugar", value: "$sugar mg/dL"),
+  //       pw.Row(
+  //         crossAxisAlignment: pw.CrossAxisAlignment.start,
+  //         children: [
+  //           // LEFT TABLE
+  //           buildColumn([
+  //             if (isValid(temperature))
+  //               vitalTile(label: "Temp", value: "$temperature °F"),
+  //
+  //             if (isValid(PK)) vitalTile(label: "PR", value: "$PK bpm"),
+  //             if (isValid(SpO2)) vitalTile(label: "SpO₂", value: "$SpO2 %"),
+  //           ]),
+  //
+  //           pw.SizedBox(width: 10),
+  //
+  //           // RIGHT TABLE
+  //           buildColumn([
+  //             if (isValid(weight))
+  //               vitalTile(label: "Weight", value: "$weight kg"),
+  //
+  //             if (isValid(height))
+  //               vitalTile(label: "Height", value: "$height cm"),
+  //
+  //             if (isValid(BMI)) vitalTile(label: "BMI", value: BMI!),
+  //           ]),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   pdf.addPage(
     pw.Page(
@@ -399,27 +399,27 @@ Future<pw.Document> buildPdf({
                 ),
               ],
             ),
-            if (fee['type'] == 'REGISTRATIONFEE')
-              if (hasAnyVital(
-                temperature: temperature,
-                bloodPressure: bloodPressure,
-                sugar: sugar,
-                height: height,
-                weight: weight,
-                BMI: BMI,
-                PK: PK,
-                SpO2: SpO2,
-              ))
-                buildVitalsDetailsCards(
-                  temperature: temperature,
-                  bloodPressure: bloodPressure,
-                  sugar: sugar,
-                  height: height,
-                  weight: weight,
-                  BMI: BMI,
-                  PK: PK,
-                  SpO2: SpO2,
-                ),
+            // if (fee['type'] == 'REGISTRATIONFEE')
+            //   if (hasAnyVital(
+            //     temperature: temperature,
+            //     bloodPressure: bloodPressure,
+            //     sugar: sugar,
+            //     height: height,
+            //     weight: weight,
+            //     BMI: BMI,
+            //     PK: PK,
+            //     SpO2: SpO2,
+            //   ))
+            //     buildVitalsDetailsCards(
+            //       temperature: temperature,
+            //       bloodPressure: bloodPressure,
+            //       sugar: sugar,
+            //       height: height,
+            //       weight: weight,
+            //       BMI: BMI,
+            //       PK: PK,
+            //       SpO2: SpO2,
+            //     ),
             pw.Divider(),
 
             // HEADLINE

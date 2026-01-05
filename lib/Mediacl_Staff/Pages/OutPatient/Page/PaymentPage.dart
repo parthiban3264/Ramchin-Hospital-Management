@@ -676,43 +676,43 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   const Divider(thickness: 1.2, height: 30),
 
                   // 💳 Fee Details
-                  if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
-                    Center(
-                      child: const Text(
-                        "Vitals",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    const Divider(thickness: 1.2, height: 30),
-
-                    if (widget.fee['type'] == 'REGISTRATIONFEE')
-                      if (hasAnyVital(
-                        temperature: temperature,
-                        bloodPressure: bloodPressure,
-                        sugar: sugar,
-                        height: height,
-                        weight: weight,
-                        BMI: BMI,
-                        PK: PK,
-                        SpO2: SpO2,
-                      ))
-                        _buildVitalsDetails(
-                          temperature: temperature,
-                          bloodPressure: bloodPressure,
-                          sugar: sugar,
-                          height: height,
-                          weight: weight,
-                          BMI: BMI,
-                          PK: PK,
-                          SpO2: SpO2,
-                        ),
-
-                    const Divider(thickness: 1.2, height: 30),
-                  ],
+                  // if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
+                  //   Center(
+                  //     child: const Text(
+                  //       "Vitals",
+                  //       style: TextStyle(
+                  //         fontWeight: FontWeight.w600,
+                  //         fontSize: 16,
+                  //         color: Colors.black87,
+                  //       ),
+                  //     ),
+                  //   ),
+                  //   const Divider(thickness: 1.2, height: 30),
+                  //
+                  //   if (widget.fee['type'] == 'REGISTRATIONFEE')
+                  //     if (hasAnyVital(
+                  //       temperature: temperature,
+                  //       bloodPressure: bloodPressure,
+                  //       sugar: sugar,
+                  //       height: height,
+                  //       weight: weight,
+                  //       BMI: BMI,
+                  //       PK: PK,
+                  //       SpO2: SpO2,
+                  //     ))
+                  //       _buildVitalsDetails(
+                  //         temperature: temperature,
+                  //         bloodPressure: bloodPressure,
+                  //         sugar: sugar,
+                  //         height: height,
+                  //         weight: weight,
+                  //         BMI: BMI,
+                  //         PK: PK,
+                  //         SpO2: SpO2,
+                  //       ),
+                  //
+                  //   const Divider(thickness: 1.2, height: 30),
+                  // ],
 
                   // 💳 Fee Details
                   Center(

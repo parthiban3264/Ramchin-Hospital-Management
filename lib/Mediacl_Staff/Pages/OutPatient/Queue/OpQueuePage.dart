@@ -152,6 +152,28 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     });
   }
 
+  bool _hasPreviousPending(List<Map<String, dynamic>> consultations) {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
+    return consultations.any((c) {
+      final status = (c['status'] ?? '').toString().toLowerCase();
+      final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+      final scanningTesting = c['scanningTesting'] ?? false;
+
+      if (!((status == 'pending' || status == 'endprocessing') &&
+          queueStatus == 'pending' &&
+          scanningTesting == false)) {
+        return false;
+      }
+
+      final createdAt = _parseCreatedAt(c['createdAt']);
+      if (createdAt == null) return false;
+
+      return createdAt.isBefore(startOfToday);
+    });
+  }
+
   List<Map<String, dynamic>> _filterConsultingByDate(
     List<Map<String, dynamic>> consultations,
     int tabIndex,
@@ -165,6 +187,35 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
 
       final createdAt = _parseCreatedAt(c['createdAt']);
 
+      if (createdAt == null) return false;
+
+      final isToday =
+          createdAt.isAfter(startOfToday) ||
+          createdAt.isAtSameMomentAs(startOfToday);
+
+      return tabIndex == 0 ? isToday : !isToday;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _filterPendingByDate(
+    List<Map<String, dynamic>> consultations,
+    int tabIndex,
+  ) {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+
+    return consultations.where((c) {
+      final status = (c['status'] ?? '').toString().toLowerCase();
+      final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+      final scanningTesting = c['scanningTesting'] ?? false;
+
+      if (!((status == 'pending' || status == 'endprocessing') &&
+          queueStatus == 'pending' &&
+          scanningTesting == false)) {
+        return false;
+      }
+
+      final createdAt = _parseCreatedAt(c['createdAt']);
       if (createdAt == null) return false;
 
       final isToday =
@@ -1094,11 +1145,25 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
 
           //final filteredQueue = _filterByTab(consultationsForDoctor);
 
+          // final bool isConsultingTab = selectedTabIndex == 1;
+          //
+          // final bool hasPreviousConsulting = _hasPreviousConsulting(
+          //   consultationsForDoctor,
+          // );
+          final bool isPendingTab = selectedTabIndex == 0;
           final bool isConsultingTab = selectedTabIndex == 1;
+
+          final bool hasPreviousPending = _hasPreviousPending(
+            consultationsForDoctor,
+          );
 
           final bool hasPreviousConsulting = _hasPreviousConsulting(
             consultationsForDoctor,
           );
+
+          final bool showDateTabs =
+              (isPendingTab && hasPreviousPending) ||
+              (isConsultingTab && hasPreviousConsulting);
 
           final bool showConsultingTabs =
               isConsultingTab && hasPreviousConsulting;
@@ -1110,16 +1175,34 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
           //       )
           //     : _filterByTab(consultationsForDoctor);
 
-          final List<Map<String, dynamic>> filteredQueue = selectedTabIndex == 1
-              ? (showConsultingTabs
+          // final List<Map<String, dynamic>> filteredQueue = selectedTabIndex == 1
+          //     ? (showConsultingTabs
+          //           ? _filterConsultingByDate(
+          //               consultationsForDoctor,
+          //               _consultingTabController.index,
+          //             )
+          //           : _filterConsultingByDate(
+          //               consultationsForDoctor,
+          //               0, // today only
+          //             ))
+          //     : _filterByTab(consultationsForDoctor);
+          final List<Map<String, dynamic>> filteredQueue = selectedTabIndex == 0
+              ? (showDateTabs
+                    ? _filterPendingByDate(
+                        consultationsForDoctor,
+                        _consultingTabController.index,
+                      )
+                    : _filterPendingByDate(
+                        consultationsForDoctor,
+                        0, // today only
+                      ))
+              : selectedTabIndex == 1
+              ? (showDateTabs
                     ? _filterConsultingByDate(
                         consultationsForDoctor,
                         _consultingTabController.index,
                       )
-                    : _filterConsultingByDate(
-                        consultationsForDoctor,
-                        0, // today only
-                      ))
+                    : _filterConsultingByDate(consultationsForDoctor, 0))
               : _filterByTab(consultationsForDoctor);
 
           return Column(
@@ -1206,7 +1289,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                   ],
                 ),
               ),
-              if (showConsultingTabs)
+              if (showDateTabs)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,

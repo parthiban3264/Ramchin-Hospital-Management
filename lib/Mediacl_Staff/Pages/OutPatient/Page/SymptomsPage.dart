@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/patient_service.dart';
 
@@ -176,15 +175,15 @@ class _SymptomsPageState extends State<SymptomsPage> {
     final missingFields = <String>[];
 
     // 🔹 If sugar test is required but not filled
-    if (widget.sugarData == true && sugarController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("⚠️ Sugar value is required"),
-          backgroundColor: Colors.red.shade400,
-        ),
-      );
-      return;
-    }
+    // if (widget.sugarData == true && sugarController.text.trim().isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: const Text("⚠️ Sugar value is required"),
+    //       backgroundColor: Colors.red.shade400,
+    //     ),
+    //   );
+    //   return;
+    // }
     // Check if all fields are empty
     final allEmpty = [
       weightController.text.trim(),
@@ -525,33 +524,33 @@ class _SymptomsPageState extends State<SymptomsPage> {
                               color: primaryColor,
                             ),
                           ),
-                          Spacer(),
+                          // Spacer(),
                           //const SizedBox(width: 8),
-                          if (widget.sugarData == true) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade100,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.green,
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Text(
-                                "PAID",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
+                          // if (widget.sugarData == true) ...[
+                          //   Container(
+                          //     padding: const EdgeInsets.symmetric(
+                          //       horizontal: 10,
+                          //       vertical: 4,
+                          //     ),
+                          //     decoration: BoxDecoration(
+                          //       color: Colors.green.shade100,
+                          //       borderRadius: BorderRadius.circular(12),
+                          //       border: Border.all(
+                          //         color: Colors.green,
+                          //         width: 1,
+                          //       ),
+                          //     ),
+                          //     child: const Text(
+                          //       "PAID",
+                          //       style: TextStyle(
+                          //         fontSize: 12,
+                          //         fontWeight: FontWeight.bold,
+                          //         color: Colors.green,
+                          //         letterSpacing: 0.5,
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ],
                         ],
                       ),
                       const SizedBox(height: 8),

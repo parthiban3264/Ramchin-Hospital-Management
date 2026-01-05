@@ -29,6 +29,11 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage>
     futurePatients = PaymentService().getAllPaid();
     topTabController = TabController(length: 2, vsync: this);
     bottomTabController = TabController(length: 2, vsync: this);
+    bottomTabController.addListener(() {
+      if (!bottomTabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -162,23 +167,55 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage>
           final data = snapshot.data!;
 
           /// 🔹 FILTER DATA (DATE + QUEUE/HISTORY + SEARCH)
+          // final filtered = data.where((item) {
+          //   final consultation = item['Consultation'] ?? {};
+          //   final patient = item['Patient'] ?? {};
+          //   final createdAt = item['createdAt'];
+          //
+          //   // final isHistoryTab = bottomTabController.index == 1;
+          //   // final symptoms = consultation['symptoms'] ?? false;
+          //   //
+          //   // final statusMatch = isHistoryTab
+          //   //     ? symptoms == true
+          //   //     : symptoms == false;
+          //
+          //   final bool isHistoryTab = bottomTabController.index == 1;
+          //   final bool hasSymptoms = consultation['symptoms'] == true;
+          //
+          //   // Queue → symptoms MUST be false
+          //   // History → symptoms MUST be true
+          //   final bool statusMatch = isHistoryTab ? hasSymptoms : !hasSymptoms;
+          //
+          //   final dateMatch = topTabController.index == 0
+          //       ? isToday(createdAt)
+          //       : !isToday(createdAt);
+          //
+          //   final searchMatch =
+          //       searchText.isEmpty ||
+          //       patient['name'].toString().toLowerCase().contains(searchText) ||
+          //       patient['id'].toString().contains(searchText);
+          //
+          //   return statusMatch && dateMatch && searchMatch;
+          // }).toList();
+
           final filtered = data.where((item) {
             final consultation = item['Consultation'] ?? {};
             final patient = item['Patient'] ?? {};
             final createdAt = item['createdAt'];
 
-            final isHistoryTab = bottomTabController.index == 1;
-            final symptoms = consultation['symptoms'] ?? false;
+            final bool isHistoryTab = bottomTabController.index == 1;
+            final bool hasSymptoms = consultation['symptoms'] == true;
+            final bool queueStatus = consultation['queueStatus'] == 'PENDING';
 
-            final statusMatch = isHistoryTab
-                ? symptoms == true
-                : symptoms == false;
+            final bool statusMatch = isHistoryTab
+                ? hasSymptoms
+                : (!hasSymptoms && queueStatus);
 
-            final dateMatch = topTabController.index == 0
+            final bool dateMatch = topTabController.index == 0
                 ? isToday(createdAt)
                 : !isToday(createdAt);
 
-            final searchMatch =
+            final bool searchMatch =
                 searchText.isEmpty ||
                 patient['name'].toString().toLowerCase().contains(searchText) ||
                 patient['id'].toString().contains(searchText);
@@ -394,32 +431,35 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage>
             ),
           ],
         ),
-        child: TabBar(
-          controller: bottomTabController,
+        child: SafeArea(
+          bottom: false,
+          child: Material(
+            color: Colors.white,
+            child: TabBar(
+              controller: bottomTabController,
 
-          /// 🔹 TOP INDICATOR
-          indicator: BoxDecoration(
-            border: Border(top: BorderSide(color: primaryColor, width: 3)),
+              indicator: BoxDecoration(
+                border: Border(top: BorderSide(color: primaryColor, width: 3)),
+              ),
+
+              labelColor: primaryColor,
+              unselectedLabelColor: Colors.grey,
+
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+
+              tabs: const [
+                Tab(text: "Queue"),
+                Tab(text: "History"),
+              ],
+            ),
           ),
-
-          labelColor: primaryColor,
-          unselectedLabelColor: Colors.grey,
-
-          labelStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-
-          tabs: const [
-            Tab(text: "Queue"),
-            Tab(text: "History"),
-          ],
-
-          onTap: (_) => setState(() {}),
         ),
       ),
     );

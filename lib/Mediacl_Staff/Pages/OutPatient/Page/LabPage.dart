@@ -508,7 +508,11 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     final reason = record['reason'] ?? '-';
     final gender = patient['gender']?.toString() ?? 'N/A';
     final bloodGroup = patient['bldGrp']?.toString() ?? 'N/A';
+    final referredDoctorName =
+        patient['referredByDoctorName']?.toString() ?? '-';
+    final bool isTestOnly = patient['isTestOnly'] ?? false;
     final doctorName = patient['doctor']?['name'].toString() ?? 'N/A';
+
     final doctorId = patient['doctor']?['id']?.toString() ?? 'N/A';
     final tokenNo = (patient['tokenNo'] == null || patient['tokenNo'] == 0)
         ? '-'
@@ -681,9 +685,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                         ReportCardWidget(
                           record: record,
                           doctorName: doctorName,
-
                           staffName: _labName,
-
                           hospitalPhotoBase64: logo ?? '',
                           optionResults: yourOptionResultsMap,
                           testTable: yourTestTableList,
@@ -712,6 +714,8 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                           _buildMedicalCard(
                             title: title,
                             doctorName: doctorName,
+                            referredDoctorName: referredDoctorName,
+                            isTestOnly: isTestOnly,
                             reason: reason,
                             doctorId: doctorId,
                             selectedOptions: _selectedOptions,
@@ -948,6 +952,8 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
   Widget _buildMedicalCard({
     required String title,
     required String doctorName,
+    required String referredDoctorName,
+    required bool isTestOnly,
     required String reason,
     required String doctorId,
     required List<String> selectedOptions,
@@ -985,8 +991,23 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
             ),
           ),
           const Divider(height: 25, color: Colors.grey),
-          _infoRow("Doctor Name", doctorName),
-          _infoRow("Doctor ID", doctorId),
+          // isTestOnly
+          //     ? _infoRow("Referred By", referredDoctorName)
+          //     : _infoRow("Doctor Name", doctorName),
+          //
+          // _infoRow("Doctor ID", doctorId),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isTestOnly == true)
+                _infoRow("Referred By", referredDoctorName)
+              else ...[
+                _infoRow("Doctor Name", doctorName),
+                _infoRow("Doctor ID", doctorId),
+              ],
+            ],
+          ),
+
           const SizedBox(height: 5),
           Container(
             padding: const EdgeInsets.all(16),
@@ -1014,7 +1035,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  reason,
+                  reason.isEmpty ? 'No Description Provided' : reason,
                   style: const TextStyle(
                     fontSize: 14,
                     height: 1.5,

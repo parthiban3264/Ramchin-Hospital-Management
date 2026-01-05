@@ -22,7 +22,7 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
 
   final TextEditingController reasonController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
-  String type = 'INCOME';
+  String type = 'EXPENSE';
 
   List<Map<String, dynamic>> drawers = [];
   double total = 0;
@@ -102,7 +102,7 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
       'reason': reasonController.text.trim(),
       'amount': double.tryParse(amountController.text.trim()) ?? 0,
       'type': 'EXPENSE',
-      'adminId': adminId,
+      'admin_Id': adminId,
       'createdAt': _dateTime,
     };
     try {
