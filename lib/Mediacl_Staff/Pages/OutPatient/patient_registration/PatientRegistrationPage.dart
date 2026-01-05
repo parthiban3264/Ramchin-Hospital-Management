@@ -80,9 +80,9 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   String? lastCheckedUserId;
   bool isCheckingUser = false;
   Map<String, dynamic>? existingPatient;
-  String? hospitalName;
-  String? hospitalPlace;
-  String? hospitalPhoto;
+  String hospitalName = '';
+  String hospitalPlace = '';
+  String hospitalPhoto = '';
 
   @override
   void initState() {
@@ -100,6 +100,12 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     currentProblemController.removeListener(_filterCurrentProblemSuggestions);
     phoneController.removeListener(_onPhoneControllerChanged);
     super.dispose();
+  }
+
+  void _onPhoneChanged(String value, void Function(bool) setValidity) {
+    String digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.startsWith('91')) digitsOnly = digitsOnly.substring(2);
+    setValidity(digitsOnly.length == 10);
   }
 
   Future<void> _loadHospitalInfo() async {
@@ -298,7 +304,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       if (phoneDigits.startsWith('91')) phoneDigits = phoneDigits.substring(2);
       phoneValid = phoneDigits.length == 10;
     });
-
     List<String> missingFields = [];
     if (fullNameController.text.trim().isEmpty) missingFields.add("Full Name");
     if (dobController.text.trim().isEmpty) missingFields.add("Date of Birth");
@@ -510,9 +515,9 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         buildHospitalCard(
-                          hospitalName: hospitalName!,
-                          hospitalPlace: hospitalPlace!,
-                          hospitalPhoto: hospitalPhoto!,
+                          hospitalName: hospitalName,
+                          hospitalPlace: hospitalPlace,
+                          hospitalPhoto: hospitalPhoto,
                         ),
                         const SizedBox(height: 18),
 
@@ -590,22 +595,77 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                               ),
 
                               /// 🔹 Phone
-                              SizedBox(
-                                width: isMobile ? double.infinity : 520,
-                                child: buildInput(
-                                  "Cell No *",
-                                  phoneController,
-                                  hint: "+911234567890",
-                                  keyboardType: TextInputType.phone,
-                                  errorText: formValidatedErrorText(
-                                    formValidated: formValidated,
-                                    valid: phoneValid,
-                                    errMsg: 'Enter valid 10 digit number',
-                                  ),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    IndianPhoneNumberFormatter(),
-                                  ],
+                              // SizedBox(
+                              //   width: isMobile ? double.infinity : 520,
+                              //   child: buildInput(
+                              //     "Cell No *",
+                              //     phoneController,
+                              //     hint: "+911234567890",
+                              //     keyboardType: TextInputType.phone,
+                              //     errorText: formValidatedErrorText(
+                              //       formValidated: formValidated,
+                              //       valid: phoneValid,
+                              //       errMsg: 'Enter valid 10 digit number',
+                              //     ),
+                              //     inputFormatters: [
+                              //       FilteringTextInputFormatter.digitsOnly,
+                              //       IndianPhoneNumberFormatter(),
+                              //     ],
+                              //   ),
+                              // ),
+                              _buildInput(
+                                "Cell No *",
+                                phoneController,
+                                hint: "+911234567890",
+                                errorText: formValidatedErrorText(
+                                  formValidated: formValidated,
+                                  valid: phoneValid,
+                                  errMsg: 'Enter valid 10 digit number',
+                                ),
+                                keyboardType: TextInputType.phone,
+                                onChanged: (val) => _onPhoneChanged(
+                                  val,
+                                  (valid) => setState(() => phoneValid = valid),
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  IndianPhoneNumberFormatter(),
+                                ],
+                                suffix: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  transitionBuilder: (child, anim) =>
+                                      ScaleTransition(
+                                        scale: anim,
+                                        child: child,
+                                      ),
+                                  child: phoneController.text.isEmpty
+                                      ? const SizedBox.shrink(
+                                          key: ValueKey('empty'),
+                                        ) // 👈 no icon when empty
+                                      : isCheckingUser
+                                      ? const SizedBox(
+                                          key: ValueKey('loader'),
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : (phoneValid
+                                            ? Icon(
+                                                isExistingUser
+                                                    ? Icons
+                                                          .person // existing patient found
+                                                    : Icons
+                                                          .check_circle, // new number valid
+                                                color: isExistingUser
+                                                    ? Colors.orange
+                                                    : Colors.green,
+                                                key: ValueKey('valid'),
+                                              )
+                                            : const SizedBox.shrink(
+                                                key: ValueKey('no-valid'),
+                                              )),
                                 ),
                               ),
 
@@ -726,8 +786,9 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                                                             ? [
                                                                 BoxShadow(
                                                                   color: customGold
-                                                                      .withOpacity(
-                                                                        0.25,
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.25,
                                                                       ),
                                                                   blurRadius: 6,
                                                                   offset:
@@ -946,6 +1007,68 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
             },
           ),
           TestRegistration(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInput(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+    String? hint,
+    String? errorText,
+    TextInputType keyboardType = TextInputType.text,
+    void Function(String)? onChanged,
+    List<TextInputFormatter>? inputFormatters,
+    Widget? suffix, // 👈 added this line
+  }) {
+    return SizedBox(
+      width: 320,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            cursorColor: customGold,
+            controller: controller,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            inputFormatters: inputFormatters,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey[50],
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 13,
+              ),
+              suffixIcon:
+                  suffix, // 👈 this allows us to show the loader or icon
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: errorText != null ? Colors.red : Colors.grey.shade300,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: errorText != null ? Colors.red : customGold,
+                  width: 1.5,
+                ),
+              ),
+              errorText: errorText,
+              errorStyle: const TextStyle(fontSize: 12, color: Colors.red),
+            ),
+            style: const TextStyle(fontSize: 15),
+          ),
         ],
       ),
     );

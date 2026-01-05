@@ -37,6 +37,8 @@ class TestRegistrationState extends State<TestRegistration> {
   final TextEditingController cityController = TextEditingController();
   final TextEditingController dobController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
+  final TextEditingController referredByDoctorNameController =
+      TextEditingController();
 
   String? selectedGender;
   String? selectedBloodType;
@@ -176,6 +178,7 @@ class TestRegistrationState extends State<TestRegistration> {
         "isTestOnly": true,
         "doctor_Id": prefs.getString('userId'),
         "name": '',
+        "referredByDoctorName": referredByDoctorNameController.text.trim(),
         "purpose": '-',
         "temperature": 0,
         "createdAt": _dateTime.toString(),
@@ -185,7 +188,7 @@ class TestRegistrationState extends State<TestRegistration> {
         _showSnack(
           consultationResult['message'] ?? 'Failed to create consultation',
         );
-        return;
+        return setState(() => isSubmitting = false);
       }
 
       final int consultationId = consultationResult['data']['consultationId'];
@@ -651,6 +654,15 @@ class TestRegistrationState extends State<TestRegistration> {
                             "Address *",
                             addressController,
                             maxLines: 3,
+                            inputFormatters: [UpperCaseTextFormatter()],
+                          ),
+                        ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: buildInput(
+                            "Doctor Referral ",
+                            referredByDoctorNameController,
+                            maxLines: 1,
                             inputFormatters: [UpperCaseTextFormatter()],
                           ),
                         ),

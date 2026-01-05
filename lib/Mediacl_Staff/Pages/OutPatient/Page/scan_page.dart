@@ -230,6 +230,10 @@ class _ScanPageState extends State<ScanPage>
     final dob = formatDob(patient['dob']);
     final age = calculateAge(patient['dob']);
     final gender = patient['gender'] ?? '-';
+    final referredDoctorName =
+        patient['referredByDoctorName']?.toString() ?? '-';
+    final bool isTestOnly = patient['isTestOnly'] ?? false;
+
     final bloodGroup = patient['bldGrp'] ?? '-';
     final tokenNo = (patient['tokenNo'] == null || patient['tokenNo'] == 0)
         ? '-'
@@ -275,6 +279,8 @@ class _ScanPageState extends State<ScanPage>
                   buildMedicalCard(
                     title: title,
                     doctorName: doctorName,
+                    referredDoctorName: referredDoctorName,
+                    isTestOnly: isTestOnly,
                     reason: reason,
                     doctorId: doctorId,
                     selectedOptions: selectedOptions,
@@ -393,6 +399,8 @@ class _ScanPageState extends State<ScanPage>
   Widget buildMedicalCard({
     required String title,
     required String doctorName,
+    required String referredDoctorName,
+    required bool isTestOnly,
     required String reason,
     required String doctorId,
     required List<String> selectedOptions,
@@ -441,8 +449,19 @@ class _ScanPageState extends State<ScanPage>
           ),
           const Divider(height: 25, color: Colors.grey),
 
-          infoRow("Doctor Name", doctorName),
-          infoRow("Doctor ID", doctorId),
+          // infoRow("Doctor Name", doctorName),
+          // infoRow("Doctor ID", doctorId),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isTestOnly == true)
+                infoRow("Referred By", referredDoctorName)
+              else ...[
+                infoRow("Doctor Name", doctorName),
+                infoRow("Doctor ID", doctorId),
+              ],
+            ],
+          ),
           const SizedBox(height: 5),
           Container(
             padding: const EdgeInsets.all(16),
@@ -470,7 +489,7 @@ class _ScanPageState extends State<ScanPage>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  reason,
+                  reason.isEmpty ? "No reason provided" : reason,
                   style: const TextStyle(
                     fontSize: 14,
                     height: 1.5,

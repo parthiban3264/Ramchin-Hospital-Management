@@ -276,11 +276,11 @@ class ConsultationService {
           final isPendingOrOngoing =
               status == 'PENDING' || status == 'CANCELLED';
 
-          // final baseCondition =
-          //     (symptom && isPendingOrOngoing) ||
-          //     (isPendingOrOngoing && paymentStatus);
           final baseCondition =
-              (paymentStatus && symptom && isPendingOrOngoing);
+              (symptom && isPendingOrOngoing) ||
+              (isPendingOrOngoing && paymentStatus);
+          // final baseCondition =
+          //     (paymentStatus && symptom && isPendingOrOngoing);
 
           if (!baseCondition) continue;
 
