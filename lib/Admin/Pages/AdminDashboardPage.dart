@@ -535,6 +535,70 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                         children: [
                           Center(
                             child: Text(
+                              'INPATIENT DESK',
+                              style: TextStyle(
+                                color: Color(0xFF886638),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildActionItem(Icons.person, "IN PATIENT", () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const DrInPatientQueuePage(),
+                                  ),
+                                );
+                              }),
+                              // _buildActionItem(Icons.healing, "Expense", () {
+                              //   Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //       builder: (_) => const AccountExpensePage(),
+                              //     ),
+                              //   );
+                              // }),
+                              // _buildActionItem(
+                              //   Icons.drive_folder_upload_rounded,
+                              //   "Drawing",
+                              //       () {
+                              //     Navigator.push(
+                              //       context,
+                              //       MaterialPageRoute(
+                              //         builder: (_) => const AccountDrawerPage(),
+                              //       ),
+                              //     );
+                              //   },
+                              // ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    elevation: 8,
+                    shadowColor: Colors.black26,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 30,
+                        horizontal: 20,
+                      ),
+                      child: Column(
+                        children: [
+                          Center(
+                            child: Text(
                               'Track Desk',
                               style: TextStyle(
                                 color: Color(0xFF886638),
