@@ -6,7 +6,6 @@ import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/admin_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
-import '../../../../lib/lib/admin/services/service/billing.dart';
 import '../../OutPatient/Report/ReportCard.dart';
 import '../../OutPatient/Report/ScanReportPage.dart';
 import '../widgets/doctor_description_edit.dart';
