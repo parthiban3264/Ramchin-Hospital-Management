@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Injection_Service.dart';
 import '../../../../Services/Medi_Tonic_Injection_service.dart';
 import '../../../../Services/Medicine_Service.dart';
 import '../../../../Services/Tonic_service.dart';
 import '../../../../Services/consultation_service.dart';
-import '../../../../Services/prescription_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../widgets/injection_card.dart';
 import '../widgets/medicine_card.dart';
@@ -71,7 +69,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     try {
       if (!medicinesLoaded) {
         final results = await medicineService.getAllMedicines();
-        print('results $results');
         if (mounted) {
           setState(() {
             allMedicines = results;
@@ -116,6 +113,23 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     }
   }
 
+  // void _onAddMedicine(List<Map<String, dynamic>> meds) {
+  //   setState(() {
+  //     for (var m in meds) {
+  //       final existingIndex = submittedMedicines.indexWhere(
+  //         (e) => e['medicineId'].toString() == m['medicineId'].toString(),
+  //       );
+  //       if (existingIndex != -1) {
+  //         submittedMedicines[existingIndex] = {
+  //           ...submittedMedicines[existingIndex],
+  //           ...m,
+  //         };
+  //       } else {
+  //         submittedMedicines.add(m);
+  //       }
+  //     }
+  //   });
+  // }
   void _onAddMedicine(List<Map<String, dynamic>> meds) {
     setState(() {
       // Replace entire summary list with the latest from MedicineCard
@@ -123,6 +137,23 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     });
   }
 
+  // void _onAddTonic(List<Map<String, dynamic>> tonics) {
+  //   setState(() {
+  //     for (var t in tonics) {
+  //       final existingIndex = submittedTonics.indexWhere(
+  //         (e) => e['tonic_Id'].toString() == t['tonic_Id'].toString(),
+  //       );
+  //       if (existingIndex != -1) {
+  //         submittedTonics[existingIndex] = {
+  //           ...submittedTonics[existingIndex],
+  //           ...t,
+  //         };
+  //       } else {
+  //         submittedTonics.add(t);
+  //       }
+  //     }
+  //   });
+  // }
   void _onAddTonic(List<Map<String, dynamic>> tonics) {
     setState(() {
       // Replace entire summary list with the latest from MedicineCard
@@ -130,6 +161,23 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     });
   }
 
+  // void _onAddInjection(List<Map<String, dynamic>> injections) {
+  //   setState(() {
+  //     for (var i in injections) {
+  //       final existingIndex = submittedInjections.indexWhere(
+  //         (e) => e['injection_Id'].toString() == i['injection_Id'].toString(),
+  //       );
+  //       if (existingIndex != -1) {
+  //         submittedInjections[existingIndex] = {
+  //           ...submittedInjections[existingIndex],
+  //           ...i,
+  //         };
+  //       } else {
+  //         submittedInjections.add(i);
+  //       }
+  //     }
+  //   });
+  // }
   void _onAddInjection(List<Map<String, dynamic>> injections) {
     setState(() {
       // Replace entire summary list with the latest from MedicineCard
@@ -138,7 +186,9 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   }
 
   Future<void> _handleSubmitPrescription() async {
-    if (submittedMedicines.isEmpty) {
+    if (submittedMedicines.isEmpty &&
+        submittedTonics.isEmpty &&
+        submittedInjections.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please add at least one item!")),
       );
@@ -152,17 +202,51 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
       return {
         'medicine_Id': int.parse(m['medicineId'].toString()),
         'consultation_Id': widget.consultation['id'],
-        'route': m['route'].toString().toUpperCase(),
         'quantity': qtyPerDose,
         'afterEat': m['afterEat'],
         'morning': m['morning'],
         'afternoon': m['afternoon'],
         'night': m['night'],
         'days': m['days'],
-        //'quantityNeeded': m['quantity'],
-        'total_quantity': m['quantity'],
-        'dosage': m['qtyPerDose'].toString(),
+        'quantityNeeded': m['quantity'],
         'total': m['total'],
+      };
+    }).toList();
+
+    final List<Map<String, dynamic>> tonicList = submittedTonics.map((t) {
+      final quantityStr = t['quantity'].toString().trim().toLowerCase();
+      final quantityValue =
+          double.tryParse(quantityStr.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      return {
+        'tonic_Id': int.parse(t['tonic_Id'].toString()),
+        'consultation_Id': widget.consultation['id'],
+        'quantity': quantityValue,
+        'Doase': t['qtyPerDose'].toString(),
+        'afterEat': t['afterEat'],
+        'morning': t['morning'],
+        'afternoon': t['afternoon'],
+        'night': t['night'],
+        'total': int.parse(t['total']),
+      };
+    }).toList();
+
+    final List<Map<String, dynamic>> injectionList = submittedInjections.map((
+      i,
+    ) {
+      final quantityStr = i['quantity'].toString().trim().toLowerCase();
+      final quantityValue =
+          double.tryParse(quantityStr.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
+      return {
+        'injection_Id': int.parse(i['injection_Id'].toString()),
+        'consultation_Id': widget.consultation['id'],
+        'quantity': quantityValue,
+        'Doase': i['quantity'].toString(),
+        'morning': i['morning'] ?? false,
+        'afternoon': i['afternoon'] ?? false,
+        'night': i['night'] ?? false,
+        'total': int.parse(i['total']),
       };
     }).toList();
 
@@ -173,28 +257,14 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
       'consultation_Id': widget.consultation['id'],
       'createdAt': _dateTime.toString(),
       'medicines': medicineList,
-      // 'tonics': tonicList,
-      // 'injections': injectionList,
+      'tonics': tonicList,
+      'injections': injectionList,
     };
 
     try {
-      // await PrescriptionService().createPrescription(prescriptionData);
-      final prescription = await PrescriptionService().createPrescription(
+      await MedicineTonicInjectionService().createMediTonicInj(
         prescriptionData,
       );
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId');
-
-      final firstMedicine = submittedMedicines[0];
-      await PrescriptionService().createPrescriptionDispense({
-        "hospital_Id": widget.consultation['hospital_Id'],
-        "prescription_medicine_Id": prescription['medicines'][0]['id'],
-        "batch_Id": firstMedicine['batch_Id'],
-        "dispensed_quantity": firstMedicine['quantity'],
-        "pharmacist_Id": userId,
-      });
-
-      // await PrescriptionService().createPrescriptionDispense(prescriptionData);
       final consultationId = widget.consultation['id'];
       if (consultationId == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -209,7 +279,9 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
         }
 
         // permanent flag for medicine/tonic/injection combined
-        if (submittedMedicines.isNotEmpty) {
+        if (submittedMedicines.isNotEmpty ||
+            submittedTonics.isNotEmpty ||
+            submittedInjections.isNotEmpty) {
           medicineTonicInjection = true; // once true, stays true
         }
       });
@@ -225,8 +297,8 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
       if (mounted) {
         Navigator.pop(context, {
           'medicine': submittedMedicines.isNotEmpty,
-          // 'tonic': submittedTonics.isNotEmpty,
-          // 'injection': submittedInjections.isNotEmpty,
+          'tonic': submittedTonics.isNotEmpty,
+          'injection': submittedInjections.isNotEmpty,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

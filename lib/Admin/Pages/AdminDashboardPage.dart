@@ -408,18 +408,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   );
                                 },
                               ),
-                              _buildActionItem(
-                                Icons.payments,
-                                "Test Payment",
-                                () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const FeesTestQueuePage(),
-                                    ),
-                                  );
-                                },
-                              ),
+                              // _buildActionItem(
+                              //   Icons.payments,
+                              //   "Test Payment",
+                              //   () {
+                              //     Navigator.push(
+                              //       context,
+                              //       MaterialPageRoute(
+                              //         builder: (_) => const FeesTestQueuePage(),
+                              //       ),
+                              //     );
+                              //   },
+                              // ),
                             ],
                           ),
                           const SizedBox(height: 25),

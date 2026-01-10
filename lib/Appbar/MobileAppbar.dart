@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../Admin/Pages/AdminEditProfilePage.dart';
 import '../Pages/NotificationsPage.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -7,25 +9,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final bool showNotificationIcon;
   final bool showHomeIcon;
-  final Widget? homePage; // 👈 NEW: dynamic home page widget
+  final VoidCallback? onHomeClicked;
 
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.title,
     required this.pageContext,
     this.showBackButton = true,
     this.showNotificationIcon = false,
     this.showHomeIcon = false,
-    this.homePage, // 👈 optional parameter
-  }) : super(key: key);
+    this.onHomeClicked,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(100);
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Colors.blue;
-
     return Container(
       height: 100,
       decoration: BoxDecoration(
@@ -36,7 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -52,18 +52,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   onPressed: () => Navigator.pop(pageContext),
                 ),
-              if (!showBackButton)
-                if (showHomeIcon && homePage != null)
-                  IconButton(
-                    icon: const Icon(Icons.home, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pushAndRemoveUntil(
-                        pageContext,
-                        MaterialPageRoute(builder: (_) => homePage!),
-                        (route) => false,
-                      );
-                    },
-                  ),
+
               if (showBackButton)
                 Text(
                   title,
@@ -87,6 +76,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     );
                   },
                 ),
+              if (showHomeIcon)
+                IconButton(
+                  icon: const Icon(Icons.home, color: Colors.white),
+                  onPressed: onHomeClicked,
+                ),
             ],
           ),
         ),
@@ -94,27 +88,3 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
-
-// appBar: CustomAppBar(
-// title: 'Doctor Prescription',
-// pageContext: context,
-// showHomeIcon: true,
-// homePage: const (), // 👈 specific home page
-// ),
-
-// truncate table consultation;
-// truncate table fees;
-//
-// truncate table injection;
-// truncate table medician;
-// truncate table medicineandinjection;
-// truncate table payment;
-// truncate table roomsavailable;
-// truncate table testingandscanninghospital;
-// truncate table testingandscanningpatient;
-// truncate table treatment;
-// truncate table patient;
-// truncate table admin;
-// truncate table adminstrator;
-// truncate table user;
-// truncate table hospital;

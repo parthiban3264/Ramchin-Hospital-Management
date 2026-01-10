@@ -302,17 +302,23 @@ class AccountsReportPdf {
       '${DateTime.now().year}';
 
   static String _doctorName(Map p) {
-    try {
-      final admins = p['Hospital']['Admins'] as List;
-      final docId = p['Consultation']['doctor_Id'];
+    final admins = p['Hospital']?['Admins'];
+    final docId = p['Consultation']?['doctor_Id'];
 
-      final name = admins
-          .firstWhere((a) => a['user_Id'] == docId)['name']
-          .toString();
-
-      return name.length > 15 ? '${name.substring(0, 15)}...' : name;
-    } catch (_) {
+    if (admins is! List || docId == null) {
       return 'Doctor';
     }
+
+    final admin = admins.cast<Map?>().firstWhere(
+      (a) => a?['user_Id'] == docId,
+      orElse: () => null,
+    );
+
+    final name = admin?['name']?.toString();
+    if (name == null || name.isEmpty) {
+      return 'Doctor';
+    }
+
+    return name.length > 12 ? '${name.substring(0, 10)}...' : name;
   }
 }

@@ -294,6 +294,7 @@ class TestRegistrationState extends State<TestRegistration> {
           "selectedOptions": amounts.keys.toList(),
           "selectedOptionAmounts": amounts,
           "createdAt": _dateTime,
+          "isTestOnly": true,
         };
 
         await http.post(
@@ -360,6 +361,7 @@ class TestRegistrationState extends State<TestRegistration> {
           "selectedOptions": amounts.keys.toList(),
           "selectedOptionAmounts": amounts,
           "createdAt": _dateTime,
+          "isTestOnly": true,
         };
 
         await http.post(

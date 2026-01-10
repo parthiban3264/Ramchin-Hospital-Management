@@ -155,18 +155,14 @@ class _MedicineCardState extends State<MedicineCard>
 
     if (!widget.medicinesLoaded) return;
 
-    // final filtered = widget.allMedicines.where((m) {
-    //   final name = (m['Name'] ?? '').toString().toLowerCase();
-    //   return name.contains(input);
-    // }).toList();
     final filtered = widget.allMedicines.where((m) {
-      final name = (m['name'] ?? '').toString().toLowerCase();
+      final name = (m['medicianName'] ?? '').toString().toLowerCase();
       return name.contains(input);
     }).toList();
 
     filtered.sort((a, b) {
-      final nameA = (a['name'] ?? '').toString().toLowerCase();
-      final nameB = (b['name'] ?? '').toString().toLowerCase();
+      final nameA = (a['medicianName'] ?? '').toString().toLowerCase();
+      final nameB = (b['medicianName'] ?? '').toString().toLowerCase();
 
       int posA = nameA.indexOf(input);
       int posB = nameB.indexOf(input);
@@ -178,10 +174,6 @@ class _MedicineCardState extends State<MedicineCard>
 
       return countB - countA;
     });
-    DateTime parseDate(dynamic value) {
-      if (value == null) return DateTime.now();
-      return DateTime.parse(value.toString()).toLocal();
-    }
 
     final results = filtered.take(5).toList();
 
@@ -256,22 +248,15 @@ class _MedicineCardState extends State<MedicineCard>
                       itemCount: medicineEntries[index].suggestions.length,
                       itemBuilder: (_, i) {
                         final med = medicineEntries[index].suggestions[i];
-                        double price =
-                            double.tryParse(
-                              (med['price'] ??
-                                      med['batches'][0]['selling_price_unit'] ??
-                                      0)
-                                  .toString(),
-                            ) ??
-                            0.0;
                         return ListTile(
                           leading: Icon(
                             Icons.medication,
                             color: widget.primaryColor,
                           ),
-                          title: Text(med['name'] ?? ''),
-                          trailing: Text("₹${price.toStringAsFixed(1)}"),
-
+                          title: Text(med['medicianName'] ?? ''),
+                          trailing: Text(
+                            "₹${(med['price'] ?? med['amount'] ?? 0.0).toString()}",
+                          ),
                           onTap: () => _selectSuggestion(med, index),
                         );
                       },
@@ -352,16 +337,10 @@ class _MedicineCardState extends State<MedicineCard>
   void _selectSuggestion(Map<String, dynamic> med, int index) {
     setState(() {
       final entry = medicineEntries[index];
-      entry.currentMedicine['name'] = med['name'] ?? '';
-      entry.currentMedicine['price'] = double.parse(
-        (med['batches'][0]['selling_price_unit'] ?? med['amount'] ?? 0.0)
-            .toStringAsFixed(2),
-      );
-
+      entry.currentMedicine['name'] = med['medicianName'] ?? '';
+      entry.currentMedicine['price'] = (med['price'] ?? med['amount'] ?? 0.0)
+          .toDouble();
       entry.currentMedicine['medicineId'] = med['id'] ?? '';
-      entry.currentMedicine['route'] = med['category'] ?? '';
-      entry.currentMedicine['batch_No'] = med['batches'][0]['batch_no'] ?? '';
-      // entry.currentMedicine['medicineId'] = med['batches'][0]['id'] ?? '';
       entry.medicineNameController.text = entry.currentMedicine['name'];
       entry.suggestions.clear();
       _removeOverlay();
@@ -405,72 +384,23 @@ class _MedicineCardState extends State<MedicineCard>
         days > 0;
   }
 
-  // Map<String, dynamic>? _buildIfValid(_MedicineEntry entry) {
-  //   if (!_isCardValid(entry)) return null;
-  //   final med = entry.currentMedicine;
-  //   final qtyPerDose = _parseQtyText(entry.quantityController.text);
-  //   final dosesPerDay = _dosesPerDay(med);
-  //   final days = _totalDays(med);
-  //   final neededQuantity = qtyPerDose * dosesPerDay * (days > 0 ? days : 1);
-  //   final tabletsToCharge = neededQuantity.ceil();
-  //   final totalCost = tabletsToCharge * (med['price'] ?? 0.0);
-  //
-  //   return {
-  //     ...med,
-  //     'qtyPerDose': qtyPerDose,
-  //     'quantityNeeded': neededQuantity,
-  //     'quantity': tabletsToCharge,
-  //     'total': totalCost,
-  //     'days': days,
-  //   };
-  // }
   Map<String, dynamic>? _buildIfValid(_MedicineEntry entry) {
+    if (!_isCardValid(entry)) return null;
     final med = entry.currentMedicine;
-    print('currentMedicine $med');
-    final name = (med['name'] ?? '').toString().trim();
-    final price = (med['price'] ?? 0.0) as double;
-    final afterEat = med['afterEat'];
-    final hasDose =
-        med['morning'] == true ||
-        med['afternoon'] == true ||
-        med['night'] == true;
-    final days = _totalDays(med);
-
-    // skip invalid entries
-    if (name.isEmpty ||
-        price <= 0 ||
-        afterEat == null ||
-        !hasDose ||
-        days <= 0) {
-      return null;
-    }
-
     final qtyPerDose = _parseQtyText(entry.quantityController.text);
     final dosesPerDay = _dosesPerDay(med);
+    final days = _totalDays(med);
     final neededQuantity = qtyPerDose * dosesPerDay * (days > 0 ? days : 1);
     final tabletsToCharge = neededQuantity.ceil();
-    final totalCost = tabletsToCharge * price;
+    final totalCost = tabletsToCharge * (med['price'] ?? 0.0);
 
     return {
       ...med,
-      "medicine_Id": med['medicineId'],
-      "batch_Id": med['batch_No'],
-      // "name": med['name'],
-      // "price": med['price'],
-      "dosage": med['dosage'] ?? "1 tablet",
-      "route": med['route'] ?? "ORAL", // MUST match your Prisma enum
-      "frequency": med['frequency'] ?? "once",
-      "days": days,
-      "total_quantity": tabletsToCharge, // int, required by Prisma
-      "after_food": afterEat,
-      "morning": med['morning'] ?? true,
-      "afternoon": med['afternoon'] ?? false,
-      "night": med['night'] ?? true,
-      "instructions": med['instructions'] ?? "",
-      "qtyPerDose": qtyPerDose,
-      "quantityNeeded": neededQuantity,
-      "quantity": tabletsToCharge,
-      "total": totalCost,
+      'qtyPerDose': qtyPerDose,
+      'quantityNeeded': neededQuantity,
+      'quantity': tabletsToCharge,
+      'total': totalCost,
+      'days': days,
     };
   }
 
@@ -484,15 +414,8 @@ class _MedicineCardState extends State<MedicineCard>
     widget.onAdd(_getNonNullMedicines());
   }
 
-  // List<Map<String, dynamic>> _getNonNullMedicines() =>
-  //     savedMedicines.whereType<Map<String, dynamic>>().toList();
-  List<Map<String, dynamic>> _getNonNullMedicines() {
-    final meds = medicineEntries
-        .map(_buildIfValid)
-        .whereType<Map<String, dynamic>>()
-        .toList();
-    return meds;
-  }
+  List<Map<String, dynamic>> _getNonNullMedicines() =>
+      savedMedicines.whereType<Map<String, dynamic>>().toList();
 
   Widget _eatTypeToggleButton(_MedicineEntry entry, int index) {
     final entry = medicineEntries[index];
@@ -651,8 +574,18 @@ class _MedicineCardState extends State<MedicineCard>
                     flex: 1,
                     child: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
+                      //onPressed: () => _deleteMedicineEntry(index),
                       onPressed: () async {
                         await _deleteMedicineEntry(index);
+                        // setState(() {
+                        //   // DELETE FROM LOCAL LISTS
+                        //   medicineEntries.removeAt(index);
+                        //   savedMedicines.removeAt(index);
+                        //
+                        //   // RETURN UPDATED DATA TO PARENT → UPDATE SUMMARY
+                        //   final updatedList = _getNonNullMedicines();
+                        //   widget.onAdd(updatedList);
+                        // });
                       },
                     ),
                   ),
@@ -692,6 +625,26 @@ class _MedicineCardState extends State<MedicineCard>
                 //   ),
                 // ),
                 const SizedBox(width: 10),
+                // Expanded(
+                //   flex: 3,
+                //   child: _durationInput("Days", 'days', entry, index),
+                // ),
+                // if (index > 0)
+                //   IconButton(
+                //     icon: const Icon(Icons.delete, color: Colors.red),
+                //     // onPressed: () => _deleteMedicineEntry(index),
+                //     onPressed: () {
+                //       setState(() {
+                //         // DELETE FROM LOCAL LISTS
+                //         medicineEntries.removeAt(index);
+                //         savedMedicines.removeAt(index);
+                //
+                //         // RETURN UPDATED DATA TO PARENT → UPDATE SUMMARY
+                //         final updatedList = _getNonNullMedicines();
+                //         widget.onAdd(updatedList);
+                //       });
+                //     },
+                //   ),
               ],
             ),
           ],
@@ -705,7 +658,6 @@ class _MedicineCardState extends State<MedicineCard>
 
   @override
   Widget build(BuildContext context) {
-    print('medicine _ : ${widget.allMedicines}');
     super.build(context);
     return Card(
       elevation: 5,
@@ -720,39 +672,29 @@ class _MedicineCardState extends State<MedicineCard>
             children: [
               InkWell(
                 onTap: widget.onExpandToggle,
-                child: Column(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Icon(
-                    //   Icons.medication,
-                    //   color: widget.primaryColor,
-                    //   size: 30,
-                    // ),
-                    // const SizedBox(width: 10),
+                    Icon(
+                      Icons.medication,
+                      color: widget.primaryColor,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 10),
                     Text(
-                      "ADD PRESCRIPTION",
+                      "Add Medicine",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: widget.primaryColor,
                       ),
                     ),
-                    SizedBox(height: 5),
-                    Divider(
-                      height: 2,
-                      thickness: 2,
+                    Icon(
+                      widget.expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
                       color: widget.primaryColor,
-                      endIndent: 40,
-                      indent: 40,
                     ),
-                    // const SizedBox(width: 10),
-                    // Icon(
-                    //   widget.expanded
-                    //       ? Icons.keyboard_arrow_up
-                    //       : Icons.keyboard_arrow_down,
-                    //   color: widget.primaryColor,
-                    //   size: 30,
-                    // ),
                   ],
                 ),
               ),

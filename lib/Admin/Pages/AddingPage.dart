@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/bulk_upload/bulk_upload.dart';
+import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/add_medicines.dart';
+import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/reorder/reorder_list.dart';
+import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/stock/stock_management.dart';
+import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/supplier/supplier.dart';
 import 'AddingPage/ActiveStaff.dart';
 import 'AddingPage/AddingScanData.dart';
 import 'AddingPage/AddingTestData.dart';
@@ -176,24 +181,68 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
               _buildSection(
                 "ADD PHARMACY",
                 _responsiveGrid([
-                  _buildActionItem(Icons.medical_information, "Medicine", () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MedicianPage()),
-                    );
-                  }),
-                  _buildActionItem(Icons.vaccines, "Injection", () {
+                  // _buildActionItem(Icons.medical_information, "Medicine", () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (_) => const MedicianPage()),
+                  //   );
+                  // }),
+                  // _buildActionItem(Icons.vaccines, "Injection", () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (_) => const AddInjectionPage(),
+                  //     ),
+                  //   );
+                  // }),
+                  // _buildActionItem(Icons.local_drink_sharp, "Tonic", () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (_) => const TonicPage()),
+                  //   );
+                  // }),
+                  _buildActionItem(Icons.medical_information, "Medicines", () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const AddInjectionPage(),
+                        builder: (context) => const InventoryPage(),
                       ),
                     );
                   }),
-                  _buildActionItem(Icons.local_drink_sharp, "Tonic", () {
+                  _buildActionItem(Icons.local_drink_sharp, "Bulk Upload", () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const TonicPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const BulkUploadPage(),
+                      ),
+                    );
+                  }),
+                  _buildActionItem(Icons.vaccines, "Stock", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StockPage(),
+                      ),
+                    );
+                  }),
+                  _buildActionItem(
+                    Icons.medical_information,
+                    "Reorder\nMedicine",
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReorderPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildActionItem(Icons.local_drink_sharp, "Supplier", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SupplierPage(),
+                      ),
                     );
                   }),
                 ]),
