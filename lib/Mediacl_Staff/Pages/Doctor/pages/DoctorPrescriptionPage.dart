@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Injection_Service.dart';
 import '../../../../Services/Medi_Tonic_Injection_service.dart';
 import '../../../../Services/Medicine_Service.dart';
 import '../../../../Services/Tonic_service.dart';
 import '../../../../Services/consultation_service.dart';
+import '../../../../Services/prescription_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../widgets/injection_card.dart';
 import '../widgets/medicine_card.dart';
@@ -23,15 +24,13 @@ class DoctorsPrescriptionPage extends StatefulWidget {
       _DoctorsPrescriptionPageState();
 }
 
-class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
-    with SingleTickerProviderStateMixin {
+class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   final Color primaryColor = const Color(0xFFB68A51);
   final socketService = SocketService();
 
   late MedicineService medicineService;
   late TonicService tonicService;
   late InjectionService injectionService;
-  late TabController _tabController;
   bool medicineTonicInjection = false;
   bool injection = false;
 
@@ -55,8 +54,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 4, vsync: this);
-
     medicineService = MedicineService();
     tonicService = TonicService();
     injectionService = InjectionService();
@@ -74,6 +71,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
     try {
       if (!medicinesLoaded) {
         final results = await medicineService.getAllMedicines();
+        print('results $results');
         if (mounted) {
           setState(() {
             allMedicines = results;
@@ -118,23 +116,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
     }
   }
 
-  // void _onAddMedicine(List<Map<String, dynamic>> meds) {
-  //   setState(() {
-  //     for (var m in meds) {
-  //       final existingIndex = submittedMedicines.indexWhere(
-  //         (e) => e['medicineId'].toString() == m['medicineId'].toString(),
-  //       );
-  //       if (existingIndex != -1) {
-  //         submittedMedicines[existingIndex] = {
-  //           ...submittedMedicines[existingIndex],
-  //           ...m,
-  //         };
-  //       } else {
-  //         submittedMedicines.add(m);
-  //       }
-  //     }
-  //   });
-  // }
   void _onAddMedicine(List<Map<String, dynamic>> meds) {
     setState(() {
       // Replace entire summary list with the latest from MedicineCard
@@ -142,23 +123,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
     });
   }
 
-  // void _onAddTonic(List<Map<String, dynamic>> tonics) {
-  //   setState(() {
-  //     for (var t in tonics) {
-  //       final existingIndex = submittedTonics.indexWhere(
-  //         (e) => e['tonic_Id'].toString() == t['tonic_Id'].toString(),
-  //       );
-  //       if (existingIndex != -1) {
-  //         submittedTonics[existingIndex] = {
-  //           ...submittedTonics[existingIndex],
-  //           ...t,
-  //         };
-  //       } else {
-  //         submittedTonics.add(t);
-  //       }
-  //     }
-  //   });
-  // }
   void _onAddTonic(List<Map<String, dynamic>> tonics) {
     setState(() {
       // Replace entire summary list with the latest from MedicineCard
@@ -166,23 +130,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
     });
   }
 
-  // void _onAddInjection(List<Map<String, dynamic>> injections) {
-  //   setState(() {
-  //     for (var i in injections) {
-  //       final existingIndex = submittedInjections.indexWhere(
-  //         (e) => e['injection_Id'].toString() == i['injection_Id'].toString(),
-  //       );
-  //       if (existingIndex != -1) {
-  //         submittedInjections[existingIndex] = {
-  //           ...submittedInjections[existingIndex],
-  //           ...i,
-  //         };
-  //       } else {
-  //         submittedInjections.add(i);
-  //       }
-  //     }
-  //   });
-  // }
   void _onAddInjection(List<Map<String, dynamic>> injections) {
     setState(() {
       // Replace entire summary list with the latest from MedicineCard
@@ -191,9 +138,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
   }
 
   Future<void> _handleSubmitPrescription() async {
-    if (submittedMedicines.isEmpty &&
-        submittedTonics.isEmpty &&
-        submittedInjections.isEmpty) {
+    if (submittedMedicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please add at least one item!")),
       );
@@ -207,51 +152,17 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
       return {
         'medicine_Id': int.parse(m['medicineId'].toString()),
         'consultation_Id': widget.consultation['id'],
+        'route': m['route'].toString().toUpperCase(),
         'quantity': qtyPerDose,
         'afterEat': m['afterEat'],
         'morning': m['morning'],
         'afternoon': m['afternoon'],
         'night': m['night'],
         'days': m['days'],
-        'quantityNeeded': m['quantity'],
+        //'quantityNeeded': m['quantity'],
+        'total_quantity': m['quantity'],
+        'dosage': m['qtyPerDose'].toString(),
         'total': m['total'],
-      };
-    }).toList();
-
-    final List<Map<String, dynamic>> tonicList = submittedTonics.map((t) {
-      final quantityStr = t['quantity'].toString().trim().toLowerCase();
-      final quantityValue =
-          double.tryParse(quantityStr.replaceAll(RegExp(r'[^0-9.]'), '')) ??
-          0.0;
-      return {
-        'tonic_Id': int.parse(t['tonic_Id'].toString()),
-        'consultation_Id': widget.consultation['id'],
-        'quantity': quantityValue,
-        'Doase': t['qtyPerDose'].toString(),
-        'afterEat': t['afterEat'],
-        'morning': t['morning'],
-        'afternoon': t['afternoon'],
-        'night': t['night'],
-        'total': int.parse(t['total']),
-      };
-    }).toList();
-
-    final List<Map<String, dynamic>> injectionList = submittedInjections.map((
-      i,
-    ) {
-      final quantityStr = i['quantity'].toString().trim().toLowerCase();
-      final quantityValue =
-          double.tryParse(quantityStr.replaceAll(RegExp(r'[^0-9.]'), '')) ??
-          0.0;
-      return {
-        'injection_Id': int.parse(i['injection_Id'].toString()),
-        'consultation_Id': widget.consultation['id'],
-        'quantity': quantityValue,
-        'Doase': i['quantity'].toString(),
-        'morning': i['morning'] ?? false,
-        'afternoon': i['afternoon'] ?? false,
-        'night': i['night'] ?? false,
-        'total': int.parse(i['total']),
       };
     }).toList();
 
@@ -262,14 +173,28 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
       'consultation_Id': widget.consultation['id'],
       'createdAt': _dateTime.toString(),
       'medicines': medicineList,
-      'tonics': tonicList,
-      'injections': injectionList,
+      // 'tonics': tonicList,
+      // 'injections': injectionList,
     };
 
     try {
-      await MedicineTonicInjectionService().createMediTonicInj(
+      // await PrescriptionService().createPrescription(prescriptionData);
+      final prescription = await PrescriptionService().createPrescription(
         prescriptionData,
       );
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('userId');
+
+      final firstMedicine = submittedMedicines[0];
+      await PrescriptionService().createPrescriptionDispense({
+        "hospital_Id": widget.consultation['hospital_Id'],
+        "prescription_medicine_Id": prescription['medicines'][0]['id'],
+        "batch_Id": firstMedicine['batch_Id'],
+        "dispensed_quantity": firstMedicine['quantity'],
+        "pharmacist_Id": userId,
+      });
+
+      // await PrescriptionService().createPrescriptionDispense(prescriptionData);
       final consultationId = widget.consultation['id'];
       if (consultationId == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -284,9 +209,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
         }
 
         // permanent flag for medicine/tonic/injection combined
-        if (submittedMedicines.isNotEmpty ||
-            submittedTonics.isNotEmpty ||
-            submittedInjections.isNotEmpty) {
+        if (submittedMedicines.isNotEmpty) {
           medicineTonicInjection = true; // once true, stays true
         }
       });
@@ -302,8 +225,8 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
       if (mounted) {
         Navigator.pop(context, {
           'medicine': submittedMedicines.isNotEmpty,
-          'tonic': submittedTonics.isNotEmpty,
-          'injection': submittedInjections.isNotEmpty,
+          // 'tonic': submittedTonics.isNotEmpty,
+          // 'injection': submittedInjections.isNotEmpty,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -325,8 +248,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
     } finally {
       setState(() {
         _isLoading = false;
-        // medicineTonicInjection = false;
-        // injection = false;
       });
     }
   }
@@ -338,7 +259,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
       appBar: PreferredSize(
         preferredSize: Size(MediaQuery.of(context).size.width, 110),
         child: Container(
-          // height: 150,
+          height: 100,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [primaryColor, primaryColor],
@@ -365,7 +286,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
                         icon: const Icon(
@@ -374,14 +294,16 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                         ),
                         onPressed: () => Navigator.pop(context),
                       ),
+                      const SizedBox(width: 8),
                       const Text(
-                        "Doctor Prescription",
+                        "Doctor Prescription ",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
                         ),
                       ),
+                      Spacer(),
                       IconButton(
                         icon: const Icon(
                           Icons.notifications,
@@ -397,111 +319,13 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                     ],
                   ),
                 ),
-
-                // Modern TabBar Container
-                // const SizedBox(height: 2),
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: SizedBox(
-                    height: 35, // 👈 make TabBar shorter (try 30–38)
-                    child: TabBar(
-                      // padding: EdgeInsets.symmetric(horizontal: 12),
-                      controller: _tabController,
-                      dividerColor: Colors.transparent,
-
-                      // only ONE indicator – the pill style
-                      indicator: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-
-                      labelPadding: const EdgeInsets.symmetric(
-                        horizontal: 2,
-                        vertical: 2,
-                      ), // tighter
-                      labelColor: primaryColor,
-                      unselectedLabelColor: Colors.white,
-                      labelStyle: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16, // 👈 slightly smaller text
-                      ),
-
-                      tabs: const [
-                        Tab(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ), // 👈 padding inside pill
-
-                            child: Text(
-                              "Medicine",
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        Tab(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(" Tonic "),
-                          ),
-                        ),
-                        Tab(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-
-                            child: Text(
-                              "Injection",
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        Tab(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text("Others"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
         ),
       ),
 
-      body: Column(
-        children: [
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildMedicineTab(),
-                _buildTonicTab(),
-                _buildInjectionTab(),
-
-                _buildOthersTab(),
-              ],
-            ),
-          ),
-        ],
-      ),
+      body: _buildMedicineTab(),
 
       // <-- Your submit button goes here
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -627,28 +451,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
       ),
     );
   }
-
-  // Widget _buildOthersTab() {
-  //   return SingleChildScrollView(
-  //     padding: const EdgeInsets.all(4),
-  //     child: Column(
-  //       children: [
-  //         OtherCard(
-  //           onAdd: (othersList) {
-  //
-  //           },
-  //         ),
-  //
-  //         // const SizedBox(height: 16),
-  //         // if (submittedMedicines.isNotEmpty ||
-  //         //     submittedTonics.isNotEmpty ||
-  //         //     submittedInjections.isNotEmpty)
-  //         _buildCombinedSummaryCard(),
-  //         const SizedBox(height: 80),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildOthersTab() {
     return Column(
@@ -859,16 +661,6 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
             buildSection("Tonics", submittedTonics),
             buildSection("Injections", submittedInjections),
             const SizedBox(height: 12),
-            // Divider(color: Colors.grey.shade300),
-            // Text(
-            //   "Total: ₹${totalSum.toStringAsFixed(2)}",
-            //   style: const TextStyle(
-            //     fontSize: 16,
-            //     fontWeight: FontWeight.bold,
-            //     color: Colors.black87,
-            //   ),
-            //   textAlign: TextAlign.right,
-            // ),
           ],
         ),
       ),

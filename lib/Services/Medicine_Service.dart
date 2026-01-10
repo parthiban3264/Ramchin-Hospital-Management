@@ -95,12 +95,12 @@ class MedicineService {
   Future<List<Map<String, dynamic>>> getAllMedicines() async {
     try {
       final hospitalId = await getHospitalId();
-
+      //medicians
       final response = await http.get(
-        Uri.parse('$baseUrl/medicians/all/$hospitalId'),
+        Uri.parse('$baseUrl/medicine/all/$hospitalId'),
         headers: {'Content-Type': 'application/json'},
       );
-
+      print('response ${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 

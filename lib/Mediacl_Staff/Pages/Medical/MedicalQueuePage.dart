@@ -13,7 +13,8 @@ class MedicalQueuePage extends StatefulWidget {
   State<MedicalQueuePage> createState() => _MedicalQueuePageState();
 }
 
-class _MedicalQueuePageState extends State<MedicalQueuePage> {
+class _MedicalQueuePageState extends State<MedicalQueuePage>
+    with TickerProviderStateMixin {
   final Color primaryColor = const Color(0xFFBF955E);
 
   late Future<List<dynamic>> consultationsFuture;
@@ -22,11 +23,14 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
   bool firstLoad = true;
 
   Timer? refreshTimer;
+  late TabController topTabController;
+  late TabController bottomTabController;
 
   @override
   void initState() {
     super.initState();
-
+    topTabController = TabController(length: 2, vsync: this);
+    bottomTabController = TabController(length: 3, vsync: this);
     consultationsFuture = _loadData();
     _startAutoRefresh();
   }
@@ -58,6 +62,8 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
   @override
   void dispose() {
     refreshTimer?.cancel();
+    topTabController.dispose();
+    bottomTabController.dispose();
     super.dispose();
   }
 
@@ -127,33 +133,96 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
         ),
       ),
 
+      body: Column(
+        children: [
+          // 🔝 OUTER TOP TABS
+          Material(
+            color: Colors.white,
+            elevation: 1,
+            child: TabBar(
+              controller: topTabController,
+              labelColor: primaryColor,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: primaryColor,
+              tabs: const [
+                Tab(text: "Today"),
+                Tab(text: "Previous"),
+              ],
+            ),
+          ),
+
+          // 🔻 CONTENT
+          Expanded(
+            child: TabBarView(
+              controller: topTabController,
+              children: [
+                // TODAY
+                firstLoad
+                    ? FutureBuilder<List<dynamic>>(
+                        future: consultationsFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFBF955E),
+                              ),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Error: ${snapshot.error}',
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            );
+                          }
+
+                          firstLoad = false;
+                          return _buildList(snapshot.data ?? []);
+                        },
+                      )
+                    : _buildList(consultationsCache),
+
+                // PREVIOUS (same UI for now)
+                _buildList(consultationsCache),
+              ],
+            ),
+          ),
+        ],
+      ),
+
       /// FIRST TIME → use FutureBuilder (loader visible once)
       /// LATER → use cached list (instant, no loader)
-      body: firstLoad
-          ? FutureBuilder<List<dynamic>>(
-              future: consultationsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFBF955E)),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Error: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.red, fontSize: 16),
-                    ),
-                  );
-                }
-
-                firstLoad = false; // disable loader forever
-
-                return _buildList(snapshot.data ?? []);
-              },
-            )
-          : _buildList(consultationsCache), // no loader, live refresh
+      // body: firstLoad
+      //     ? FutureBuilder<List<dynamic>>(
+      //         future: consultationsFuture,
+      //         builder: (context, snapshot) {
+      //           if (snapshot.connectionState == ConnectionState.waiting) {
+      //             return const Center(
+      //               child: CircularProgressIndicator(color: Color(0xFFBF955E)),
+      //             );
+      //           }
+      //
+      //           if (snapshot.hasError) {
+      //             return Center(
+      //               child: Text(
+      //                 'Error: ${snapshot.error}',
+      //                 style: const TextStyle(color: Colors.red, fontSize: 16),
+      //               ),
+      //             );
+      //           }
+      //
+      //           firstLoad = false; // disable loader forever
+      //
+      //           return _buildList(snapshot.data ?? []);
+      //         },
+      //       )
+      //     : _buildList(consultationsCache), // no loader, live refresh
     );
   }
 

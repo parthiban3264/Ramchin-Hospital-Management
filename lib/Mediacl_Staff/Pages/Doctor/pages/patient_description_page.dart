@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/admin_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../OutPatient/Report/ReportCard.dart';
 import '../../OutPatient/Report/ScanReportPage.dart';
-import '../widgets/doctor_description_edit.dart';
 import '../widgets/patient_histroy_in_doctor.dart';
 import 'DoctorPrescriptionPage.dart';
-//import 'DrOpDashboard/DrOutPatientQueuePage.dart';
 import 'ScanningPage.dart';
 import 'TestingPage.dart';
 
@@ -377,11 +374,11 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     final temperature = consultation['temperature'].toString();
     final bloodPressure = consultation['bp'] ?? '_';
     final sugar = consultation['sugar'] ?? '_';
-    final height = consultation['height'].toString() ?? '_';
-    final weight = consultation['weight'].toString() ?? '_';
-    final BMI = consultation['BMI'].toString() ?? '_';
-    final PK = consultation['PK'].toString() ?? '_';
-    final SpO2 = consultation['SPO2'].toString() ?? '_';
+    final height = consultation['height'].toString();
+    final weight = consultation['weight'].toString();
+    final BMI = consultation['BMI'].toString();
+    final PK = consultation['PK'].toString();
+    final SpO2 = consultation['SPO2'].toString();
 
     // final LabId = consultation['TeatingAndScanningPatient'][0]['staff_Id'];
 

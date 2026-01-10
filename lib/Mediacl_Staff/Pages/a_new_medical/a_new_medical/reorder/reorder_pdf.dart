@@ -6,8 +6,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../../../../Admin/Pages/AdminEditProfilePage.dart';
-import '../../../../Appbar/MobileAppbar.dart';
+import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Appbar/MobileAppbar.dart';
 // import '../../../public/main_navigation.dart';
 
 class ReorderPdfPage extends StatefulWidget {
