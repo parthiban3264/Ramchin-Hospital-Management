@@ -2,18 +2,18 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hospitrax/Admin/Pages/AdminEditProfilePage.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
 import '../../../../../utils/utils.dart';
 
-class BulkBatchUpload extends StatefulWidget {
+class BulkMedicineUpload extends StatefulWidget {
   final List<Map<String, dynamic>> batches;
   final String hospitalId;
   final String hospitalPhoto;
   final String hospitalName;
 
-  const BulkBatchUpload({
+  const BulkMedicineUpload({
     super.key,
     required this.batches,
     required this.hospitalId,
@@ -22,10 +22,10 @@ class BulkBatchUpload extends StatefulWidget {
   });
 
   @override
-  State<BulkBatchUpload> createState() => _BulkBatchUploadState();
+  State<BulkMedicineUpload> createState() => _BulkMedicineUploadState();
 }
 
-class _BulkBatchUploadState extends State<BulkBatchUpload> {
+class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
   late List<Map<String, TextEditingController>> controllers;
   late List<Map<String, dynamic>> calculatedRows;
   Map<String, String> medicineNameCache = {};
