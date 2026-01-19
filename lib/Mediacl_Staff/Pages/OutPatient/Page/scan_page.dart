@@ -16,10 +16,13 @@ class ScanPage extends StatefulWidget {
     required this.record,
     required this.mode,
     required this.type,
+    required this.currentIndex,
   });
   final Map<String, dynamic> record;
   final int mode;
   final String type;
+  final int currentIndex;
+
   @override
   State<ScanPage> createState() => _ScanPageState();
 }
@@ -377,7 +380,7 @@ class _ScanPageState extends State<ScanPage>
                 ],
               ),
             ),
-      floatingActionButton: widget.mode == 2
+      floatingActionButton: widget.mode == 2 && widget.currentIndex != 2
           ? FloatingActionButton.extended(
               onPressed: handelSubmitReport,
               icon: const Icon(Icons.picture_as_pdf),

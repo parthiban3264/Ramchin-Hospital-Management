@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
@@ -13,7 +14,8 @@ class LabQueuePage extends StatefulWidget {
   State<LabQueuePage> createState() => _LabQueuePageState();
 }
 
-class _LabQueuePageState extends State<LabQueuePage> {
+class _LabQueuePageState extends State<LabQueuePage>
+    with SingleTickerProviderStateMixin {
   late Future<List<dynamic>> futureXRayQueue;
   late Future<List<dynamic>> futureSugarQueue;
   final Color primaryColor = const Color(0xFFBF955E);
@@ -23,6 +25,8 @@ class _LabQueuePageState extends State<LabQueuePage> {
   int sugarCount = 0;
   int labCount = 0;
   int testedCount = 0;
+  // int _currentIndex = 0;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -31,6 +35,45 @@ class _LabQueuePageState extends State<LabQueuePage> {
       'Tests',
     );
     futureSugarQueue = ConsultationService().getAllSugarConsultation();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  DateTime? parseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+
+    try {
+      // Backend format: 2025-12-30 06:39 PM
+      return DateFormat('yyyy-MM-dd hh:mm a').parse(dateStr);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool isToday(String? dateStr) {
+    final date = parseDate(dateStr);
+    if (date == null) return false;
+
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  bool isLastThreeDays(String? dateStr) {
+    final date = parseDate(dateStr);
+    if (date == null) return false;
+
+    final now = DateTime.now();
+    final threeDaysAgo = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 3));
+
+    return date.isAfter(threeDaysAgo) && !isToday(dateStr);
   }
 
   void _groupRecordsByPatient(List<dynamic> records) {
@@ -57,41 +100,79 @@ class _LabQueuePageState extends State<LabQueuePage> {
     }
   }
 
+  // Map<String, List<dynamic>> _getFilteredRecords() {
+  //   if (_selectedTabIndex == 1) {
+  //     // TESTED TAB → only completed
+  //     return Map.fromEntries(
+  //       groupedRecords.entries
+  //           .map((entry) {
+  //             final completedTests = entry.value.where((test) {
+  //               return (test['queueStatus'] ?? '').toString().toUpperCase() ==
+  //                   'COMPLETED';
+  //             }).toList();
+  //
+  //             return MapEntry(entry.key, completedTests);
+  //           })
+  //           .where((entry) => entry.value.isNotEmpty),
+  //     );
+  //   }
+  //
+  //   // LAB TEST TAB → pending / normal queue
+  //   if (_selectedTabIndex == 0) {
+  //     return Map.fromEntries(
+  //       groupedRecords.entries
+  //           .map((entry) {
+  //             final pendingTests = entry.value.where((test) {
+  //               final qs = (test['queueStatus'] ?? '').toString().toUpperCase();
+  //               return qs == 'PENDING';
+  //             }).toList();
+  //
+  //             return MapEntry(entry.key, pendingTests);
+  //           })
+  //           .where((entry) => entry.value.isNotEmpty),
+  //     );
+  //   }
+  //
+  //   // SUGAR TEST TAB (no backend change yet)
+  //   return groupedRecords;
+  // }
+  bool _matchesDate(dynamic record) {
+    final createdAt = record['createdAt'];
+    if (createdAt == null) return false;
+
+    return _tabController.index == 0
+        ? isToday(createdAt)
+        : isLastThreeDays(createdAt);
+  }
+
   Map<String, List<dynamic>> _getFilteredRecords() {
-    if (_selectedTabIndex == 1) {
-      // TESTED TAB → only completed
-      return Map.fromEntries(
-        groupedRecords.entries
-            .map((entry) {
-              final completedTests = entry.value.where((test) {
-                return (test['queueStatus'] ?? '').toString().toUpperCase() ==
-                    'COMPLETED';
-              }).toList();
+    return Map.fromEntries(
+      groupedRecords.entries
+          .map((entry) {
+            final filtered = entry.value.where((test) {
+              final qs = (test['queueStatus'] ?? '').toString().toUpperCase();
+              final status = (test['status'] ?? '').toString().toUpperCase();
 
-              return MapEntry(entry.key, completedTests);
-            })
-            .where((entry) => entry.value.isNotEmpty),
-      );
-    }
+              // 🔹 HISTORY TAB
+              if (_selectedTabIndex == 2) {
+                return status == 'COMPLETED' && _matchesDate(test);
+              }
 
-    // LAB TEST TAB → pending / normal queue
-    if (_selectedTabIndex == 0) {
-      return Map.fromEntries(
-        groupedRecords.entries
-            .map((entry) {
-              final pendingTests = entry.value.where((test) {
-                final qs = (test['queueStatus'] ?? '').toString().toUpperCase();
-                return qs == 'PENDING';
-              }).toList();
+              // 🔹 TESTED TAB
+              if (_selectedTabIndex == 1) {
+                return qs == 'COMPLETED' &&
+                    status != 'COMPLETED' &&
+                    _matchesDate(test);
+              }
 
-              return MapEntry(entry.key, pendingTests);
-            })
-            .where((entry) => entry.value.isNotEmpty),
-      );
-    }
+              // 🔹 LAB TEST TAB
+              return qs == 'PENDING' && _matchesDate(test);
+            }).toList();
 
-    // SUGAR TEST TAB (no backend change yet)
-    return groupedRecords;
+            return MapEntry(entry.key, filtered);
+          })
+          .where((e) => e.value.isNotEmpty),
+    );
   }
 
   Color _genderColor(String gender) {
@@ -176,7 +257,23 @@ class _LabQueuePageState extends State<LabQueuePage> {
           ),
         ),
       ),
-      body: _buildLabQueue(),
+
+      //body: _buildLabQueue(),
+      body: Column(
+        children: [
+          TabBar(
+            controller: _tabController,
+            labelColor: primaryColor,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: primaryColor,
+            tabs: const [
+              Tab(text: "Today"),
+              Tab(text: "Previous"),
+            ],
+          ),
+          Expanded(child: _buildLabQueue()),
+        ],
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedTabIndex,
@@ -194,6 +291,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
           // ),
           BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Lab Test'),
           BottomNavigationBarItem(icon: Icon(Icons.verified), label: 'Tested'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
         ],
       ),
     );
@@ -219,25 +317,34 @@ class _LabQueuePageState extends State<LabQueuePage> {
         final records = snapshot.data ?? [];
         _groupRecordsByPatient(records);
         final filteredRecords = _getFilteredRecords();
+        int _getCurrentCount() {
+          return _getFilteredRecords().values.expand((e) => e).length;
+        }
 
-        // Compute counts dynamically
-        final int pendingCount = groupedRecords.values
-            .expand((e) => e)
-            .where(
-              (e) =>
-                  (e['queueStatus'] ?? '').toString().toUpperCase() ==
-                  'PENDING',
-            )
-            .length;
+        String _getCounterTitle() {
+          if (_selectedTabIndex == 0) return "Lab Test Patients";
+          if (_selectedTabIndex == 1) return "Tested Patients";
+          return "History Patients";
+        }
 
-        final int completedCount = groupedRecords.values
-            .expand((e) => e)
-            .where(
-              (e) =>
-                  (e['queueStatus'] ?? '').toString().toUpperCase() ==
-                  'COMPLETED',
-            )
-            .length;
+        // // Compute counts dynamically
+        // final int pendingCount = groupedRecords.values
+        //     .expand((e) => e)
+        //     .where(
+        //       (e) =>
+        //           (e['queueStatus'] ?? '').toString().toUpperCase() ==
+        //           'PENDING',
+        //     )
+        //     .length;
+        //
+        // final int completedCount = groupedRecords.values
+        //     .expand((e) => e)
+        //     .where(
+        //       (e) =>
+        //           (e['queueStatus'] ?? '').toString().toUpperCase() ==
+        //           'COMPLETED',
+        //     )
+        //     .length;
 
         return Column(
           children: [
@@ -252,16 +359,25 @@ class _LabQueuePageState extends State<LabQueuePage> {
                   color: Colors.white,
                 ),
                 child: Center(
-                  child: Text(
-                    _selectedTabIndex == 1
-                        ? "Lab Test Patients ( $pendingCount )"
-                        : "Tested Patients ( $completedCount )",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
+                  child:
+                      // Text(
+                      //   _selectedTabIndex == 1
+                      //       ? "Lab Test Patients ( $pendingCount )"
+                      //       : "Tested Patients ( $completedCount )",
+                      //   style: const TextStyle(
+                      //     fontSize: 20,
+                      //     fontWeight: FontWeight.bold,
+                      //     letterSpacing: 0.6,
+                      //   ),
+                      // ),
+                      Text(
+                        "${_getCounterTitle()} ( ${_getCurrentCount()} )",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
                 ),
               ),
             ),
@@ -313,6 +429,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
           tokenNo: tokenNo,
           genderColor: _genderColor(gender),
           genderIcon: _genderIcon(gender),
+          selectedIndex: _selectedTabIndex,
           onRefresh: () {
             setState(() {
               futureXRayQueue = TestingScanningService()
@@ -454,6 +571,7 @@ class PatientTestCard extends StatefulWidget {
   final String tokenNo;
   final IconData genderIcon;
   final VoidCallback onRefresh;
+  final int selectedIndex;
 
   const PatientTestCard({
     Key? key,
@@ -463,6 +581,7 @@ class PatientTestCard extends StatefulWidget {
     required this.genderIcon,
     required this.onRefresh,
     required this.tokenNo,
+    required this.selectedIndex,
   }) : super(key: key);
 
   @override
@@ -622,6 +741,7 @@ class _PatientTestCardState extends State<PatientTestCard> {
                           currentIndex: index,
                           queueStaus: queueStatus.toUpperCase(),
                           mode: 0, // individual test click
+                          selectedIndex: widget.selectedIndex,
                         ),
                       ),
                     );
@@ -654,6 +774,7 @@ class _PatientTestCardState extends State<PatientTestCard> {
                     currentIndex: 0,
                     queueStaus: 'COMPLETED',
                     mode: 1, // full card click
+                    selectedIndex: widget.selectedIndex,
                   ),
                 ),
               );

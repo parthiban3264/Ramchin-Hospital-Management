@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/patient_test_registration_payment.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/test_registration.dart';
 
 import '../../../../Services/Scan_Test_Get-Service.dart';
 import '../../../../Services/socket_service.dart';
 
 class ScanningPage extends StatefulWidget {
-  const ScanningPage({super.key});
+  final String mode;
+  const ScanningPage({super.key, required this.mode});
 
   @override
   State<ScanningPage> createState() => ScanningPageState();
@@ -74,7 +76,9 @@ class ScanningPageState extends State<ScanningPage> {
   }
 
   Future<void> _submitAllScans() async {
-    TestRegistrationState.onUpdate(savedScan: savedScans);
+    widget.mode == '0'
+        ? TestRegistrationState.onUpdate(savedScan: savedScans)
+        : TestRegistrationAndPaymentState.onUpdate(savedScan: savedScans);
     Navigator.pop(context);
   }
 

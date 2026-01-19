@@ -48,7 +48,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
         },
         items: [
           BottomNavigationBarItem(label: "Patient", icon: Icon(Icons.people)),
-          BottomNavigationBarItem(label: "Test", icon: Icon(Icons.person)),
+          BottomNavigationBarItem(
+            label: "Test & Scan",
+            icon: Icon(Icons.person),
+          ),
         ],
       ),
       body: IndexedStack(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/patient_test_registration_payment.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/test_registration.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,22 +60,23 @@ class _PatientRegistrationAndPaymentPageState
       body: IndexedStack(
         index: selectedIndex,
         children: [
-          PatientRegistrationPages(key: patientKey),
-          TestRegistration(key: testKey),
+          PatientRegistrationAndPaymentPages(key: patientKey),
+          TestRegistrationAndPayment(key: testKey),
         ],
       ),
     );
   }
 }
 
-class PatientRegistrationPages extends StatefulWidget {
-  const PatientRegistrationPages({super.key});
+class PatientRegistrationAndPaymentPages extends StatefulWidget {
+  const PatientRegistrationAndPaymentPages({super.key});
   @override
-  State<PatientRegistrationPages> createState() =>
-      _PatientRegistrationPagesState();
+  State<PatientRegistrationAndPaymentPages> createState() =>
+      _PatientRegistrationAndPaymentPagesState();
 }
 
-class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
+class _PatientRegistrationAndPaymentPagesState
+    extends State<PatientRegistrationAndPaymentPages> {
   final PatientService patientService = PatientService();
   final doctorService = DoctorService();
   final consultationService = ConsultationService();
@@ -138,6 +140,11 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
   late FocusNode ageDobFocus;
   late FocusNode addressFocus;
   late FocusNode complaintFocus;
+  bool showPaymentPage = false;
+
+  dynamic paymentData;
+  late Map<String, dynamic> paymentPatient;
+  int paymentIndex = 0;
 
   @override
   void initState() {
@@ -182,8 +189,120 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
     super.dispose();
   }
 
+  void _resetRegistrationForm() {
+    // 🔹 Text controllers
+    fullNameController.clear();
+    accompanierNameController.clear();
+    emailController.clear();
+    guardianEmailController.clear();
+    phoneController.clear();
+    emergencyController.clear();
+    addressController.clear();
+    cityController.clear();
+    zipController.clear();
+    dobController.clear();
+    ageController.clear();
+    doctorIdController.clear();
+    doctorNameController.clear();
+    departmentController.clear();
+    complaintController.clear();
+    currentProblemController.clear();
+    medicalHistoryController.clear();
+    sugarTestController.clear();
+
+    // 🔹 State variables
+    selectedGender = null;
+    selectedBloodType = null;
+    medicalHistoryChoice = null;
+
+    isSugarTestChecked = false;
+    isEmergency = false;
+    showGuardianEmail = false;
+    isSubmitting = false;
+    formValidated = false;
+    phoneValid = true;
+    emergencyValid = true;
+
+    // 🔹 Existing / family
+    familyPatients = [];
+    existingPatient = null;
+    selectedPatientId = null;
+    isExistingUser = false;
+    isAddingNewChild = false;
+    lastCheckedUserId = null;
+
+    // 🔹 Doctor selection
+    selectedDoctor = null;
+
+    // 🔹 Payment
+    paymentData = null;
+    paymentPatient = {};
+    paymentIndex = 0;
+
+    // 🔹 UI state
+    showPaymentPage = false;
+
+    // 🔹 Refocus phone
+    focusPhone();
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (showPaymentPage) {
+      return _buildInlinePaymentPage();
+    }
+
+    return _buildRegistrationPage(); // your existing UI
+  }
+
+  Widget _buildInlinePaymentPage() {
+    return Column(
+      children: [
+        Expanded(
+          child: FeesPaymentPage(
+            fee: paymentData,
+            patient: paymentPatient,
+            index: paymentIndex,
+            page: 'reg',
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.only(bottom: 2, left: 8, right: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  showPaymentPage = false;
+                  _resetRegistrationForm();
+                });
+              },
+              icon: const Icon(Icons.schedule),
+              label: const Text(
+                "Pay Later",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                elevation: 4, // 👈 subtle
+                backgroundColor: Colors.blue.shade50,
+                foregroundColor: Colors.grey.shade900,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegistrationPage() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isMobile = constraints.maxWidth < 600;
@@ -997,58 +1116,6 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
     );
   }
 
-  //---------------------------------------------------------show Payment-----------------------------
-  Future<void> _showPaymentChoiceDialog({
-    required BuildContext context,
-    required dynamic fee,
-    required dynamic patient,
-    required int index,
-  }) async {
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            "Payment",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: const Text("Do you want to pay now or later?"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx); // close dialog
-                Navigator.pop(context, true); // normal navigation
-              },
-              child: const Text("Pay Later"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: customGold),
-              onPressed: () {
-                Navigator.pop(ctx); // close dialog
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => FeesPaymentPage(
-                      fee: fee,
-                      patient: patient,
-                      index: index,
-                    ),
-                  ),
-                );
-              },
-              child: const Text("Pay Now"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Widget buildDoctorList() {
     if (isLoadingDoctors) {
       return const Center(child: CircularProgressIndicator());
@@ -1478,17 +1545,14 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
         //   Navigator.pop(context, true);
         //   return;
         // }
-        if (result['data']['payment'] != null) {
-          await _showPaymentChoiceDialog(
-            context: context,
-            fee: result['data']['payment'],
-            patient: {
-              "id": selectedPatientId,
-              "name": fullNameController.text,
-              "phone": phoneController.text,
-            },
-            index: 0,
-          );
+        final payment = result['data']['payment'];
+
+        if (payment != null) {
+          setState(() {
+            paymentData = payment;
+            paymentPatient = payment['Patient'];
+            showPaymentPage = true; // 🔥 hide registration, show payment
+          });
         } else {
           // Optional UX feedback
           showSnackBar('No payment required', context);
@@ -1533,19 +1597,15 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
         //   Navigator.pop(context, true);
         // }
         ;
-        print('payment1 ${result['data']['payment']}');
-        if (result['data']['payment'] != null) {
-          await _showPaymentChoiceDialog(
-            context: context,
-            fee: result['data']['payment'],
-            patient: result['data']['payment']['Patient'],
-            index: 0,
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Patient registered and appointment created'),
-            ),
-          );
+        final payment = result['data']['payment'];
+        print('resulttt : $result');
+        print('payment21: $payment');
+        if (payment != null) {
+          setState(() {
+            paymentData = payment;
+            paymentPatient = payment['Patient'];
+            showPaymentPage = true; // 🔥 hide registration, show payment
+          });
         } else {
           // Optional UX feedback
           showSnackBar('No payment required', context);

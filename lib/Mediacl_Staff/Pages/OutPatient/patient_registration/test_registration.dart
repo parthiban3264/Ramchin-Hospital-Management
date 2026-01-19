@@ -803,7 +803,7 @@ class TestRegistrationState extends State<TestRegistration> {
                 builder: (_) {
                   return SizedBox(
                     height: MediaQuery.of(context).size.height * 0.85,
-                    child: ScanningPage(),
+                    child: ScanningPage(mode: '0'),
                   );
                 },
               );
@@ -819,7 +819,7 @@ class TestRegistrationState extends State<TestRegistration> {
                 builder: (_) {
                   return SizedBox(
                     height: MediaQuery.of(context).size.height * 0.85,
-                    child: TestingPage(),
+                    child: TestingPage(mode: '0'),
                   );
                 },
               );
