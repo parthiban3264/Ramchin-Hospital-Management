@@ -41,6 +41,7 @@ class AccountListReportPdf {
         _AccountRow(
           date: p['createdAt'],
           income: (p['amount'] ?? 0).toDouble(),
+          reason: p['reason'],
         ),
       );
     }
@@ -52,7 +53,7 @@ class AccountListReportPdf {
         _AccountRow(
           date: e['createdAt'],
           expense: type == 'EXPENSE' ? (e['amount'] ?? 0).toDouble() : 0,
-          drawingOut: type == 'INCOME' ? (e['amount'] ?? 0).toDouble() : 0,
+          income: type == 'INCOME' ? (e['amount'] ?? 0).toDouble() : 0,
         ),
       );
     }
@@ -153,11 +154,16 @@ class AccountListReportPdf {
       total.add(r);
     }
 
-    final bool showProfit = reportType != ReportType.monthly;
+    final bool showProfit =
+        reportType != ReportType.monthly && reportType != ReportType.daily;
 
     final headers = [
       'S.No',
-      reportType == ReportType.yearly ? 'Month' : 'Date',
+      reportType == ReportType.yearly
+          ? 'Month'
+          : reportType == ReportType.daily
+          ? 'Description'
+          : 'Date',
       'Income',
       'Expense',
       'Drawing +',
@@ -172,12 +178,14 @@ class AccountListReportPdf {
           '${i + 1}',
           reportType == ReportType.yearly
               ? DateFormat('MMM yyyy').format(r.date)
+              : reportType == ReportType.daily
+              ? ' ${r.reason}'
               : DateFormat('dd-MM-yyyy').format(r.date),
-          '₹${r.income.toStringAsFixed(2)}',
-          '₹${r.expense.toStringAsFixed(2)}',
-          '₹${r.drawingIn.toStringAsFixed(2)}',
-          '₹${r.drawingOut.toStringAsFixed(2)}',
-          if (showProfit) '₹${r.profitLoss.toStringAsFixed(2)}',
+          '₹${r.income.toStringAsFixed(1)}',
+          '₹${r.expense.toStringAsFixed(1)}',
+          '₹${r.drawingIn.toStringAsFixed(1)}',
+          '₹${r.drawingOut.toStringAsFixed(1)}',
+          if (showProfit) '₹${r.profitLoss.toStringAsFixed(1)}',
         ];
       }),
 
@@ -281,6 +289,7 @@ class AccountListReportPdf {
 class _AccountRow {
   final DateTime date;
   double income, expense, drawingIn, drawingOut;
+  String reason;
 
   _AccountRow({
     required this.date,
@@ -288,6 +297,7 @@ class _AccountRow {
     this.expense = 0,
     this.drawingIn = 0,
     this.drawingOut = 0,
+    this.reason = '',
   });
 
   void add(_AccountRow r) {

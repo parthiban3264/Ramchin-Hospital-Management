@@ -33,7 +33,7 @@ class WhatsAppSendPaymentBill {
     required String patientId,
     required String tokenNo,
     required String age,
-    required String temperature,
+    // required String temperature,
     required String bloodPressure,
     required String sugar,
     required String height,
@@ -69,9 +69,9 @@ class WhatsAppSendPaymentBill {
     if (isValid(sugar)) {
       vitalsLines.add("Sugar            : $sugar mg/dL");
     }
-    if (isValid(temperature)) {
-      vitalsLines.add("Temperature      : $temperature °F");
-    }
+    // if (isValid(temperature)) {
+    //   vitalsLines.add("Temperature      : $temperature °F");
+    // }
     if (isValid(bloodPressure)) {
       vitalsLines.add("Blood Pressure   : $bloodPressure");
     }

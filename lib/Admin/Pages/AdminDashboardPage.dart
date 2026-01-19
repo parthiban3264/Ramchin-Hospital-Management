@@ -450,18 +450,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                           );
                         },
                       ),
-                      _buildActionItem(
-                        Icons.money,
-                        "AddAdmissionChargesPage",
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AddAdmissionChargesPage(),
-                            ),
-                          );
-                        },
-                      ),
+                      // _buildActionItem(
+                      //   Icons.money,
+                      //   "AddAdmissionChargesPage",
+                      //   () {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         builder: (_) => const AddAdmissionChargesPage(),
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
 
                       // _buildActionItem(Icons.add_business, "Manage Rooms", () {
                       //   Navigator.push(
@@ -823,11 +823,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -851,11 +853,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -878,11 +882,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -913,11 +919,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -941,11 +949,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -968,11 +978,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -1003,11 +1015,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -1030,11 +1044,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -1057,11 +1073,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -1093,11 +1111,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -1121,11 +1141,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),
@@ -1149,11 +1171,13 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                               record,
                                               required int mode,
                                               required String type,
+                                              required int currentIndex,
                                             }) {
                                               return ScanPage(
                                                 record: record,
                                                 mode: mode,
                                                 type: type,
+                                                currentIndex: currentIndex,
                                               );
                                             },
                                       ),

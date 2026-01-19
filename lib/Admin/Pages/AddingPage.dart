@@ -194,12 +194,12 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
                       );
                     },
                   ),
-                  _buildActionItem(Icons.add_business, "Manage Rooms", () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const WardsPage()),
-                    );
-                  }),
+                  // _buildActionItem(Icons.add_business, "Manage Rooms", () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (_) => const WardsPage()),
+                  //   );
+                  // }),
                 ]),
               ),
 

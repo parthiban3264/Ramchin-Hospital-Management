@@ -233,7 +233,7 @@ class PatientListReportPdf {
           // Medical Summary
           if (medicalAmounts.isNotEmpty) ...[
             pw.Text(
-              "Medical / Injection / Tonic Summary",
+              "Medicians",
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
             ),
             pw.SizedBox(height: 6),

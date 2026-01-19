@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/patient_test_registration_payment.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/test_registration.dart';
 
 import '../../../../Services/Scan_Test_Get-Service.dart';
 import '../../../../Services/socket_service.dart';
 
 class TestingPage extends StatefulWidget {
-  const TestingPage({super.key});
+  final String mode;
+  const TestingPage({super.key, required this.mode});
 
   @override
   State<TestingPage> createState() => TestingPageState();
@@ -71,7 +73,9 @@ class TestingPageState extends State<TestingPage> {
   }
 
   Future<void> _submitAllTests() async {
-    TestRegistrationState.onUpdate(savedTest: savedTests);
+    widget.mode == '0'
+        ? TestRegistrationState.onUpdate(savedTest: savedTests)
+        : TestRegistrationAndPaymentState.onUpdate(savedTest: savedTests);
     Navigator.pop(context);
   }
 

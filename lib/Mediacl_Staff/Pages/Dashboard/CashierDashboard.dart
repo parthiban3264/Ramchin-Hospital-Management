@@ -7,10 +7,12 @@ import '../../../Admin/Pages/Accounts/ExpensePage.dart';
 import '../../../Admin/Pages/Accounts/FinancePage.dart';
 import '../../../Admin/Pages/Accounts/IncomeExpensePage.dart';
 import '../../../Admin/Pages/Accounts/accounts_report.dart';
+import '../../../Admin/Pages/Accounts/patient_list_reportpage.dart';
 import '../../../Services/admin_service.dart';
 import '../OutPatient/Queue/FeesQueuePage.dart';
 import '../OutPatient/Queue/outer_testPayment_queue.dart';
 import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
+import '../OutPatient/patient_registration/patient_registration_payment_page.dart';
 
 class CashierDashboardPage extends StatefulWidget {
   const CashierDashboardPage({super.key});
@@ -130,7 +132,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                         children: [
                           Center(
                             child: Text(
-                              'Cashier Desk',
+                              'Cashier DESK',
                               style: TextStyle(
                                 color: const Color(0xFF886638),
                                 fontSize: 20,
@@ -188,7 +190,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                 if (cashierPermissionIds.contains(12))
                                   _buildActionItem(
                                     Icons.currency_rupee,
-                                    "Payment",
+                                    "PAYMENT\n ",
                                     () {
                                       Navigator.push(
                                         context,
@@ -201,7 +203,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                 if (cashierPermissionIds.contains(27))
                                   _buildActionItem(
                                     Icons.currency_rupee,
-                                    "Test Payment",
+                                    "TEST PAYMENT \n ",
                                     () {
                                       Navigator.push(
                                         context,
@@ -216,13 +218,13 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                 if (cashierPermissionIds.contains(26))
                                   _buildActionItem(
                                     Icons.how_to_reg,
-                                    "register",
+                                    "REGISTER &\n PAYMENT",
                                     () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) =>
-                                              const PatientRegistrationPage(),
+                                              const PatientRegistrationAndPaymentPage(),
                                         ),
                                       );
                                     },
@@ -257,7 +259,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                           children: [
                             Center(
                               child: Text(
-                                'ACCOUNT Desk',
+                                'ACCOUNT DESK',
                                 style: TextStyle(
                                   color: const Color(0xFF886638),
                                   fontSize: 20,
@@ -307,13 +309,14 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                               ),
 
                             if (cashierPermissionIds.contains(21) ||
-                                cashierPermissionIds.contains(22))
+                                cashierPermissionIds.contains(22) ||
+                                cashierPermissionIds.contains(23))
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   if (cashierPermissionIds.contains(21))
-                                    _buildActionItem(Icons.money, "Income", () {
+                                    _buildActionItem(Icons.money, "INCOME", () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -325,7 +328,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                   if (cashierPermissionIds.contains(22))
                                     _buildActionItem(
                                       Icons.healing,
-                                      "Expense",
+                                      "EXPENSE",
                                       () {
                                         Navigator.push(
                                           context,
@@ -336,19 +339,10 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                         );
                                       },
                                     ),
-                                ],
-                              ),
-                            const SizedBox(height: 25),
-                            if (cashierPermissionIds.contains(23) ||
-                                cashierPermissionIds.contains(24))
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
                                   if (cashierPermissionIds.contains(23))
                                     _buildActionItem(
                                       Icons.drive_folder_upload_rounded,
-                                      "Drawing",
+                                      "DRAWING",
                                       () {
                                         Navigator.push(
                                           context,
@@ -359,10 +353,20 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                         );
                                       },
                                     ),
+                                ],
+                              ),
+                            const SizedBox(height: 25),
+                            if (cashierPermissionIds.contains(24) ||
+                                cashierPermissionIds.contains(25) ||
+                                cashierPermissionIds.contains(28))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
                                   if (cashierPermissionIds.contains(24))
                                     _buildActionItem(
                                       Icons.bar_chart,
-                                      "Finance",
+                                      "FINANCE",
                                       () {
                                         Navigator.push(
                                           context,
@@ -375,13 +379,27 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                   if (cashierPermissionIds.contains(25))
                                     _buildActionItem(
                                       Icons.receipt_long,
-                                      "Report",
+                                      "REPORT",
                                       () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) =>
                                                 const AccountsReport(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (cashierPermissionIds.contains(28))
+                                    _buildActionItem(
+                                      Icons.receipt,
+                                      "LIST REPORT",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const PatientListReportPage(),
                                           ),
                                         );
                                       },

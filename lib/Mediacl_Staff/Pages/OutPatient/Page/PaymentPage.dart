@@ -19,12 +19,14 @@ class FeesPaymentPage extends StatefulWidget {
   final Map<String, dynamic> fee;
   final Map<String, dynamic> patient;
   final int index;
+  final String page;
 
   const FeesPaymentPage({
     super.key,
     required this.fee,
     required this.patient,
     required this.index,
+    required this.page,
   });
 
   @override
@@ -455,12 +457,40 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         value.trim() != '-mg/dL';
   }
 
+  Future<bool> _confirmRemove(String title) async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: const Text("Confirm Remove"),
+            content: Text("Remove $title from bill?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text("Remove"),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
-    final consultation = widget.fee['Consultation'];
-    final temperature = consultation['temperature'].toString();
-    final bloodPressure = consultation['bp'] ?? '_';
+    final consultation = widget.fee['Consultation'] ?? {};
+    // final temperature = consultation['temperature'] ?? '';
+    final bloodPressure = consultation['bp'] ?? {} ?? '_';
     final sugar = consultation['sugar'] ?? '_';
     final height = consultation['height'].toString() ?? '_';
     final weight = consultation['weight'].toString() ?? '_';
@@ -531,72 +561,181 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       return [];
     }
 
+    Future<void> _removeOption({
+      required int testIndex,
+      required String optionKey,
+      required num optionAmount,
+    }) async {
+      final tests = widget.fee['TestingAndScanningPatients'];
+      final test = tests[testIndex];
+      final Map options = Map.from(test['selectedOptionAmounts'] ?? {});
+
+      if (options.length <= 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("At least one option must remain")),
+        );
+        return;
+      }
+
+      final confirm = await _confirmRemove(optionKey);
+      if (!confirm) return;
+
+      try {
+        // 🔹 Remove option from backend test
+        options.remove(optionKey);
+        await TestingScanningService().updateTesting(test['id'], {
+          "selectedOptionAmounts": options,
+          "selectedOptions": options.keys.toList(),
+          "amount": (test['amount'] ?? 0) - optionAmount,
+        });
+
+        // 🔹 Update payment
+        final num updatedTotal = (widget.fee['amount'] - optionAmount).clamp(
+          0,
+          double.infinity,
+        );
+        await PaymentService().updatePayment(widget.fee['id'], {
+          'amount': updatedTotal,
+          'updatedAt': DateTime.now().toString(),
+        });
+
+        // 🔹 Update UI
+        test['selectedOptionAmounts'] = options;
+        test['amount'] = (test['amount'] ?? 0) - optionAmount;
+        setState(() {
+          widget.fee['amount'] = updatedTotal;
+        });
+      } catch (e) {
+        debugPrint("Error deleting option: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to remove option")),
+        );
+      }
+    }
+
+    Future<void> _removeTestAt(int index) async {
+      final List tests = widget.fee['TestingAndScanningPatients'] ?? [];
+
+      if (tests.length <= 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("At least one test/scan must remain")),
+        );
+        return;
+      }
+
+      final test = tests[index];
+      final num testAmount = test['amount'] ?? 0;
+      if (testAmount <= 0) return;
+
+      final confirm = await _confirmRemove(test['title'] ?? 'Test');
+      if (!confirm) return;
+
+      try {
+        // 🔹 Delete from backend
+        await TestingScanningService().deleteTesting(test['id']);
+
+        // 🔹 Update payment
+        final num updatedTotal = (widget.fee['amount'] - testAmount).clamp(
+          0,
+          double.infinity,
+        );
+        await PaymentService().updatePayment(widget.fee['id'], {
+          'amount': updatedTotal,
+          'updatedAt': DateTime.now().toString(),
+        });
+
+        // 🔹 Update UI locally
+        tests.removeAt(index);
+        setState(() {
+          widget.fee['amount'] = updatedTotal;
+          widget.fee['TestingAndScanningPatients'] = tests;
+        });
+      } catch (e) {
+        debugPrint("Error deleting test: $e");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Failed to remove test")));
+      }
+    }
+
     return Scaffold(
       backgroundColor: background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
-        child: Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: themeColor,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+
+      appBar: widget.page == 'reg'
+          ? null
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(100),
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: themeColor,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
                   ),
-                  const Text(
-                    "Fees Payment",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Text(
+                          "Fees Payment",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const NotificationPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.home, color: Colors.white),
+                          onPressed: () {
+                            int count = 0;
+                            Navigator.popUntil(
+                              context,
+                              (route) => count++ >= 2,
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.notifications, color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.home, color: Colors.white),
-                    onPressed: () {
-                      int count = 0;
-                      Navigator.popUntil(context, (route) => count++ >= 2);
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -817,27 +956,154 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     //
                     //   return _billRow(title, selectedOption, "₹ $amount");
                     // }).toList(),
-                    ...tests.expand((t) {
-                      final title = t["title"]?.toString() ?? "-";
-                      final amount = t["amount"]?.toString() ?? "0";
-                      final selectedOption = t['selectedOptionAmounts'];
+                    // ...tests.expand((t) {
+                    //   final title = t["title"]?.toString() ?? "-";
+                    //   final amount = t["amount"]?.toString() ?? "0";
+                    //   final selectedOption = t['selectedOptionAmounts'];
+                    //
+                    //   final bool showSubRows = hasSubAmounts(selectedOption);
+                    //   final entries = showSubRows
+                    //       ? parseSelectedOption(selectedOption)
+                    //       : <MapEntry<String, num>>[];
+                    //
+                    //   return [
+                    //     // ✅ ALWAYS show parent row
+                    //     // _billRow(title, amount, isBold: true, fontSize: 16),
+                    //     _billRowWithRemove(
+                    //       label: title,
+                    //       value: amount,
+                    //       onRemove: () => _removeTestAt(index),
+                    //     ),
+                    //
+                    //     // ✅ Show sub rows ONLY for new data
+                    //     if (showSubRows)
+                    //       ...entries.map(
+                    //         (e) => _subBillRow(e.key, e.value.toString()),
+                    //       ),
+                    //
+                    //     const SizedBox(height: 8),
+                    //   ];
+                    // }),
+                    // ...tests.asMap().entries.expand((entry) {
+                    //   final index = entry.key;
+                    //   final t = entry.value;
+                    //
+                    //   final title = t["title"]?.toString() ?? "-";
+                    //   final amount = t["amount"]?.toString() ?? "0";
+                    //   final selectedOption = t['selectedOptionAmounts'];
+                    //   bool isLastItem = tests.length == 1;
+                    //
+                    //   final bool showSubRows = hasSubAmounts(selectedOption);
+                    //   final entries = showSubRows
+                    //       ? parseSelectedOption(selectedOption)
+                    //       : <MapEntry<String, num>>[];
+                    //
+                    //   return [
+                    //     // ✅ Parent row with remove
+                    //     _billRowWithRemove(
+                    //       label: title,
+                    //       value: amount,
+                    //       onRemove: () => _removeTestAt(index),
+                    //     ),
+                    //
+                    //     // ✅ Sub rows (unchanged)
+                    //     if (showSubRows)
+                    //       ...entries.map(
+                    //         (e) => _subBillRow(e.key, e.value.toString()),
+                    //       ),
+                    //
+                    //     const SizedBox(height: 8),
+                    //   ];
+                    // }),
+                    // ...tests.asMap().entries.expand((entry) {
+                    //   final testIndex = entry.key;
+                    //   final test = entry.value;
+                    //
+                    //   final title = test["title"]?.toString() ?? "-";
+                    //   final testAmount = test["amount"]?.toDouble() ?? 0;
+                    //   final selectedOption = test['selectedOptionAmounts'];
+                    //
+                    //   final entries = parseSelectedOption(selectedOption);
+                    //
+                    //   // 🔒 Check if last test or last option
+                    //   final bool isLastTest = tests.length == 1;
+                    //
+                    //   return [
+                    //     /// ✅ Parent test row
+                    //     _billRowWithRemove(
+                    //       label: title,
+                    //       value: testAmount.toStringAsFixed(0),
+                    //       isDisabled: isLastTest,
+                    //       onRemove: () => _removeTestAt(testIndex),
+                    //     ),
+                    //
+                    //     /// ✅ Sub-option rows
+                    //     if (entries.isNotEmpty)
+                    //       ...entries.asMap().entries.map((optEntry) {
+                    //         final optionIndex = optEntry.key;
+                    //         final option = optEntry.value;
+                    //
+                    //         // 🔒 Disable icon if it's the last option in this test
+                    //         final bool isLastOption = entries.length == 1;
+                    //
+                    //         return _subBillRowWithRemove(
+                    //           label: option.key,
+                    //           amount: option.value,
+                    //           isDisabled: isLastOption,
+                    //           onRemove: () {
+                    //             _removeOption(
+                    //               testIndex: testIndex,
+                    //               optionKey: option.key,
+                    //               optionAmount: option.value,
+                    //             );
+                    //           },
+                    //         );
+                    //       }),
+                    //
+                    //     const SizedBox(height: 8),
+                    //   ];
+                    // }),
+                    ...tests.asMap().entries.expand((entry) {
+                      final testIndex = entry.key;
+                      final test = entry.value;
 
-                      final bool showSubRows = hasSubAmounts(selectedOption);
-                      final entries = showSubRows
-                          ? parseSelectedOption(selectedOption)
-                          : <MapEntry<String, num>>[];
+                      final title = test["title"]?.toString() ?? "-";
+                      final testAmount = test["amount"]?.toDouble() ?? 0;
+                      final selectedOption = test['selectedOptionAmounts'];
+                      final entries = parseSelectedOption(selectedOption);
+
+                      final bool isLastTest = tests.length == 1;
 
                       return [
-                        // ✅ ALWAYS show parent row
-                        _billRow(title, amount, isBold: true, fontSize: 16),
+                        // Parent test row
+                        _billRowWithRemove(
+                          label: title,
+                          value: testAmount.toStringAsFixed(0),
+                          isDisabled: isLastTest,
+                          onRemove: () => _removeTestAt(testIndex),
+                        ),
 
-                        // ✅ Show sub rows ONLY for new data
-                        if (showSubRows)
-                          ...entries.map(
-                            (e) => _subBillRow(e.key, e.value.toString()),
-                          ),
+                        // Sub-options
+                        if (entries.isNotEmpty)
+                          ...entries.asMap().entries.map((optEntry) {
+                            final option = optEntry.value;
+                            final bool isLastOption = entries.length == 1;
 
-                        const SizedBox(height: 8),
+                            return _subBillRowWithRemove(
+                              label: option.key,
+                              amount: option.value,
+                              isDisabled: isLastOption,
+                              onRemove: () {
+                                _removeOption(
+                                  testIndex: testIndex,
+                                  optionKey: option.key,
+                                  optionAmount: option.value,
+                                );
+                              },
+                            );
+                          }),
+
+                        const SizedBox(height: 6),
                       ];
                     }),
                   ],
@@ -1047,7 +1313,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                         widget
                                             .fee['Consultation']?['sugarTestFee'] ??
                                         0,
-                                    temperature: temperature,
+                                    // temperature: temperature,
                                     bloodPressure: bloodPressure,
                                     sugar: sugar,
                                     height: height,
@@ -1243,6 +1509,45 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
+  Widget _billRowWithRemove({
+    required String label,
+    required String value,
+    required VoidCallback onRemove,
+    required bool isDisabled,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          Text("₹ $value", style: const TextStyle(fontSize: 15)),
+
+          /// 🔴 Remove icon (always shown)
+          if (widget.index == 0)
+            IconButton(
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 22,
+                color: isDisabled ? Colors.grey : Colors.redAccent,
+              ),
+              onPressed: isDisabled
+                  ? null // 🔒 disabled only for last item
+                  : onRemove,
+              tooltip: isDisabled
+                  ? "At least one test/scan must remain"
+                  : "Remove",
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget feeRowWithRemove({
     required String title,
     required num? amount,
@@ -1270,6 +1575,37 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               tooltip: removable ? "Remove $title" : null,
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _subBillRowWithRemove({
+    required String label,
+    required num amount,
+    required bool isDisabled,
+    required VoidCallback onRemove,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text("• $label", style: const TextStyle(fontSize: 14)),
+          ),
+          Text("₹ ${amount.toStringAsFixed(0)}"),
+          if (widget.index == 0)
+            IconButton(
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 18,
+                color: isDisabled ? Colors.grey : Colors.redAccent,
+              ),
+              onPressed: isDisabled ? null : onRemove,
+              tooltip: isDisabled
+                  ? "At least one option must remain"
+                  : "Remove option",
+            ),
         ],
       ),
     );
@@ -1504,57 +1840,6 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               value.isEmpty ? "-" : value,
               style: const TextStyle(color: Colors.black87),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _billRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    double fontSize = 15,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ),
-          Text(
-            "₹ $value",
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _subBillRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              "• $label",
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-          ),
-          Text(
-            "₹ $value",
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
           ),
         ],
       ),

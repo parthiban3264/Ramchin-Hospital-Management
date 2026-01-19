@@ -1,50 +1,325 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:excel/excel.dart' as excel;
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
 import '../../../../../utils/utils.dart';
+import '../../../OutPatient/patient_registration/widget/widget.dart';
 
-class BulkMedicineUpload extends StatefulWidget {
-  final List<Map<String, dynamic>> batches;
-  final String hospitalId;
-  final String hospitalPhoto;
-  final String hospitalName;
-
-  const BulkMedicineUpload({
-    super.key,
-    required this.batches,
-    required this.hospitalId,
-    required this.hospitalPhoto,
-    required this.hospitalName,
-  });
+class BulkUploadMedicinePage extends StatefulWidget {
+  const BulkUploadMedicinePage({super.key});
 
   @override
-  State<BulkMedicineUpload> createState() => _BulkMedicineUploadState();
+  State<BulkUploadMedicinePage> createState() => _BulkUploadMedicinePageState();
 }
 
-class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
-  late List<Map<String, TextEditingController>> controllers;
-  late List<Map<String, dynamic>> calculatedRows;
-  Map<String, String> medicineNameCache = {};
-  Map<String, String> supplierNameCache = {};
-  Map<int, bool?> batchAvailability = {};
-
-  String? shopId;
+class _BulkUploadMedicinePageState extends State<BulkUploadMedicinePage> {
+  bool isLoadingShop = true;
+  String? hospitalId;
+  String? hospitalName;
+  String? hospitalPlace;
+  String? hospitalPhoto;
 
   @override
   void initState() {
     super.initState();
-    shopId = widget.hospitalId;
+    _loadHospitalInfo();
+  }
 
-    calculatedRows = List.generate(widget.batches.length, (_) => {});
+  Future<void> _loadHospitalInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    hospitalId = prefs.getString('hospitalId');
+    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
+    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
+    hospitalPhoto =
+        prefs.getString('hospitalPhoto') ??
+        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+
+    setState(() => isLoadingShop = false);
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        backgroundColor: primaryColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _downloadTemplate() async {
+    try {
+      final data = await rootBundle.load('assets/medicine.xlsx');
+      final bytes = data.buffer.asUint8List();
+
+      final savedPath = await FileSaver.instance.saveFile(
+        name: 'medicine.xlsx', // 👈 include extension in name
+        bytes: bytes,
+        mimeType: MimeType.microsoftExcel,
+      );
+
+      _showMessage("Template downloaded successfully\n$savedPath");
+    } catch (e) {
+      _showMessage("Download failed: $e");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> parseExcelBytes(Uint8List bytes) async {
+    final ex = excel.Excel.decodeBytes(bytes);
+    List<Map<String, dynamic>> rows = [];
+
+    String formatDate(dynamic value) {
+      if (value == null) return "";
+      try {
+        DateTime date;
+        if (value is DateTime) {
+          date = value;
+        } else if (value is double) {
+          date = DateTime(1899, 12, 30).add(Duration(days: value.toInt()));
+        } else {
+          date = DateTime.parse(value.toString());
+        }
+        return date.toIso8601String().split("T")[0];
+      } catch (_) {
+        return "";
+      }
+    }
+
+    int toInt(dynamic v) => int.tryParse(v?.toString() ?? "") ?? 0;
+    double toDouble(dynamic v) => double.tryParse(v?.toString() ?? "") ?? 0.0;
+
+    for (var sheet in ex.tables.values) {
+      for (var row in sheet.rows.skip(1)) {
+        dynamic cell(int i) => i < row.length ? row[i]?.value : null;
+
+        rows.add({
+          "MEDICINE_NAME": cell(0),
+          "NDC_CODE": cell(1),
+          "Category": cell(2),
+          "Other_Category": cell(3),
+          "Reorder": toInt(cell(4)),
+          "Batch_no": cell(5),
+          "Rack_no": cell(6),
+          "HSN_code": cell(7),
+          "EXP_Date": formatDate(cell(8)),
+          "MFG_Date": formatDate(cell(9)),
+          "Quantity": toInt(cell(10)),
+          "Free_quantity": toInt(cell(11)),
+          "Unit": toInt(cell(12)),
+          "Rate_per_quantity": toDouble(cell(13)),
+          "GST": toDouble(cell(14)),
+          "MRP": toDouble(cell(15)),
+          "Profit": toDouble(cell(16)),
+          "Supplier_id": cell(17),
+          "Purchase_Date": formatDate(cell(18)),
+        });
+      }
+    }
+    return rows;
+  }
+
+  Future<void> _pickExcelAndOpenUpload() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        withData: true, // ✅ REQUIRED for web
+      );
+
+      if (result == null) {
+        _showMessage("No file selected");
+        return;
+      }
+
+      Uint8List bytes;
+
+      if (kIsWeb) {
+        // 🌐 Web: bytes already available
+        bytes = result.files.single.bytes!;
+      } else {
+        // 📱 Mobile/Desktop
+        final path = result.files.single.path;
+        if (path == null) {
+          _showMessage("Invalid file path");
+          return;
+        }
+        final fileBytes = await File(path).readAsBytes(); // List<int>
+        bytes = Uint8List.fromList(fileBytes); // ✅ convert
+      }
+
+      final rows = await parseExcelBytes(bytes);
+
+      if (rows.isEmpty) {
+        _showMessage("Excel file is empty");
+        return;
+      }
+
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BulkBatchMedicineUpload(
+            batches: rows,
+            hospitalName: hospitalName!,
+            hospitalId: hospitalId!,
+            hospitalPlace: hospitalPlace!,
+            hospitalPhoto: hospitalPhoto!,
+          ),
+        ),
+      );
+    } catch (e) {
+      _showMessage("Failed to read Excel: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: isLoadingShop
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // const SizedBox(height: 16),
+                  buildHospitalCard(
+                    hospitalName: hospitalName!,
+                    hospitalPlace: hospitalPlace!,
+                    hospitalPhoto: hospitalPhoto!,
+                  ),
+
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: 220,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _downloadTemplate,
+                      icon: const Icon(Icons.download_rounded),
+                      label: const Text(
+                        "Download Template",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 54),
+                        elevation: 3,
+                        shadowColor: Colors.green.withValues(alpha: 0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  SizedBox(
+                    width: 180,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _pickExcelAndOpenUpload,
+                      icon: const Icon(Icons.upload_file_rounded),
+                      label: const Text(
+                        "Upload Excel",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 54),
+                        elevation: 3,
+                        shadowColor: Colors.blue.withValues(alpha: 0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class BulkBatchMedicineUpload extends StatefulWidget {
+  final List<Map<String, dynamic>> batches;
+  final String hospitalId;
+  final String hospitalName;
+  final String hospitalPlace;
+  final String hospitalPhoto;
+
+  const BulkBatchMedicineUpload({
+    super.key,
+    required this.batches,
+    required this.hospitalId,
+    required this.hospitalName,
+    required this.hospitalPlace,
+    required this.hospitalPhoto,
+  });
+
+  @override
+  State<BulkBatchMedicineUpload> createState() =>
+      _BulkBatchMedicineUploadState();
+}
+
+class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
+  late List<Map<String, TextEditingController>> controllers;
+  late List<Map<String, dynamic>> calculatedRows;
+  Map<String, String> supplierNameCache = {};
+  Map<int, bool?> medicineNameAvailability = {};
+
+  int? shopId;
+
+  @override
+  void initState() {
+    super.initState();
+    shopId = int.tryParse(widget.hospitalId);
 
     controllers = widget.batches.map((row) {
       return {
-        "MEDICINE_ID": TextEditingController(
-          text: row["MEDICINE_ID"]?.toString() ?? "",
+        "MEDICINE_NAME": TextEditingController(
+          text: row["MEDICINE_NAME"]?.toString() ?? "",
+        ),
+        "NDC_CODE": TextEditingController(
+          text: row["NDC_CODE"]?.toString() ?? "",
+        ),
+        "Category": TextEditingController(
+          text: row["Category"]?.toString() ?? "",
+        ),
+        "Other_Category": TextEditingController(
+          text: row["Other_Category"]?.toString() ?? "",
+        ),
+        "Reorder": TextEditingController(
+          text: row["Reorder"]?.toString() ?? "",
         ),
         "Batch_no": TextEditingController(
           text: row["Batch_no"]?.toString() ?? "",
@@ -83,69 +358,62 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
       };
     }).toList();
 
-    _postInitTasks();
-  }
-
-  Future<void> _postInitTasks() async {
-    if (shopId == null) return;
-
-    // ✅ Validate existing batch numbers (Excel loaded)
     for (int i = 0; i < controllers.length; i++) {
-      final batch = controllers[i]["Batch_no"]!.text.trim();
-      final medId = int.tryParse(controllers[i]["MEDICINE_ID"]!.text);
+      medicineNameAvailability[i] = false;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      validateAllMedicineNames();
+    });
+  }
 
-      if (batch.isNotEmpty && medId != null) {
-        batchAvailability[i] = null;
-        final result = await validateBatchBackend(medId, batch);
-        batchAvailability[i] = result;
+  Future<bool> checkMedicineName({
+    required String name,
+    required String category,
+  }) async {
+    if (shopId == null || name.trim().isEmpty) return false;
+
+    try {
+      final url = Uri.parse(
+        "$baseUrl/inventory/medicine/check-name/$shopId?name=${Uri.encodeComponent(name)}&category=${Uri.encodeComponent(category)}",
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return !(data['exists'] ?? false); // ✅ available if NOT exists
       }
-    }
+    } catch (_) {}
 
-    // ✅ Fetch names
-    for (final r in controllers) {
-      final medId = int.tryParse(r["MEDICINE_ID"]!.text);
-      final supId = int.tryParse(r["Supplier_id"]!.text);
-      if (medId != null) await fetchMedicineName(medId);
-      if (supId != null) await fetchSupplierName(supId);
-    }
-
-    setState(() {});
+    return false;
   }
 
-  Future<bool> validateBatchBackend(int medicineId, String batchNo) async {
-    if (shopId == null || batchNo.isEmpty) {
-      throw Exception("ShopId not ready");
+  Future<void> validateAllMedicineNames() async {
+    for (int i = 0; i < controllers.length; i++) {
+      final name = controllers[i]["MEDICINE_NAME"]!.text.trim();
+
+      if (name.isEmpty) {
+        medicineNameAvailability[i] = false;
+        continue;
+      }
+
+      setState(() {
+        medicineNameAvailability[i] = null; // ⏳ checking
+      });
+
+      final available = await checkMedicineName(
+        name: name,
+        category: controllers[i]["Category"]!.text.toLowerCase() == 'other'
+            ? controllers[i]["Other_Category"]!.text
+            : controllers[i]["Category"]!.text,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        medicineNameAvailability[i] = available;
+      });
     }
-    final res = await http.get(
-      Uri.parse(
-        "$baseUrl/inventory/medicine/$shopId/$medicineId/validate-batch?batch_no=$batchNo",
-      ),
-    );
-
-    if (res.statusCode != 200 && res.statusCode != 201) return false;
-
-    final data = jsonDecode(res.body);
-    return data["is_valid"] == true;
-  }
-
-  Future<String?> fetchMedicineName(int id) async {
-    if (shopId == null) return null;
-
-    final cacheKey = "$shopId-$id";
-    if (medicineNameCache.containsKey(cacheKey)) {
-      return medicineNameCache[cacheKey];
-    }
-
-    final res = await http.get(
-      Uri.parse("$baseUrl/medicine/by-id/$shopId/$id"),
-    );
-
-    if (res.statusCode == 200) {
-      final name = jsonDecode(res.body)["name"];
-      medicineNameCache[cacheKey] = name;
-      return name;
-    }
-    return null;
   }
 
   Future<String?> fetchSupplierName(int id) async {
@@ -208,64 +476,6 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
     };
   }
 
-  Widget _buildHallCard({String? hospitalName, String? hospitalPhoto}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 95,
-      decoration: BoxDecoration(
-        color: primaryColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primaryColor, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ClipOval(
-            child: hospitalPhoto != null
-                ? Image.network(
-                    (hospitalPhoto),
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 70,
-                    height: 70,
-                    color: Colors.white, // 👈 soft teal background
-                    child: const Icon(
-                      Icons.home_work_rounded,
-                      color: primaryColor,
-                      size: 35,
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                hospitalName == null ? '-' : hospitalName.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void recalcRow(int i) {
     final r = controllers[i];
 
@@ -310,6 +520,129 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
     );
   }
 
+  DataCell medicineNameCell({
+    required TextEditingController controller,
+    required TextEditingController category,
+    required int rowIndex,
+  }) {
+    Timer? debounce;
+
+    return DataCell(
+      SizedBox(
+        width: 180,
+        child: StatefulBuilder(
+          builder: (context, setLocalState) {
+            return TextField(
+              controller: controller,
+              cursorColor: primaryColor,
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                suffixIcon: medicineNameAvailability[rowIndex] == null
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        medicineNameAvailability[rowIndex]!
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                        color: medicineNameAvailability[rowIndex]!
+                            ? Colors.green
+                            : Colors.red,
+                        size: 18,
+                      ),
+              ),
+              onChanged: (value) {
+                if (debounce?.isActive ?? false) debounce!.cancel();
+
+                setLocalState(() {
+                  medicineNameAvailability[rowIndex] = null; // ⏳ checking
+                });
+
+                debounce = Timer(const Duration(milliseconds: 500), () async {
+                  final available = await checkMedicineName(
+                    name: value.trim(),
+                    category: category.text.trim(),
+                  );
+
+                  if (!mounted) return;
+
+                  if (controller.text.trim() == value.trim()) {
+                    setState(() {
+                      medicineNameAvailability[rowIndex] = available;
+                    });
+                  }
+                });
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  DataCell categoryCell({
+    required TextEditingController categoryController,
+    required TextEditingController medicineController,
+    required int rowIndex,
+  }) {
+    Timer? debounce;
+    return DataCell(
+      SizedBox(
+        width: 180,
+        child: StatefulBuilder(
+          builder: (context, setLocalState) {
+            return TextField(
+              controller: categoryController,
+              cursorColor: primaryColor,
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                suffixIcon: medicineNameAvailability[rowIndex] == null
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        medicineNameAvailability[rowIndex]!
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                        color: medicineNameAvailability[rowIndex]!
+                            ? Colors.green
+                            : Colors.red,
+                        size: 18,
+                      ),
+              ),
+              onChanged: (value) {
+                if (debounce?.isActive ?? false) debounce!.cancel();
+
+                setLocalState(() {
+                  medicineNameAvailability[rowIndex] = null;
+                });
+
+                debounce = Timer(const Duration(milliseconds: 500), () async {
+                  final available = await checkMedicineName(
+                    name: medicineController.text.trim(),
+                    category: value.trim(),
+                  );
+
+                  if (!mounted) return;
+
+                  setState(() {
+                    medicineNameAvailability[rowIndex] = available;
+                  });
+                });
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> submitAll() async {
     if (shopId == null) return;
 
@@ -320,7 +653,12 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
       final calc = calculateValues(r);
 
       batchPayload.add({
-        "medicine_id": int.parse(r["MEDICINE_ID"]!.text),
+        "medicine_name": r["MEDICINE_NAME"]!.text.trim(),
+        "ndc_code": r["NDC_CODE"]!.text.trim(),
+        "category": r["Category"]!.text == "Other"
+            ? r["Other_Category"]!.text.trim()
+            : r["Category"]!.text.trim(),
+        "reorder_level": int.tryParse(r["Reorder"]!.text) ?? 0,
         "batch_no": r["Batch_no"]!.text,
         "rack_no": r["Rack_no"]?.text ?? "",
         "hsncode": r["HSN_code"]?.text ?? "",
@@ -347,12 +685,12 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
         "selling_price_per_unit": calc["sellingPerUnit"],
         "selling_price_per_quantity": calc["sellingPrice"],
         "profit_percent": double.parse(r["Profit"]!.text),
-        "reason": "New Stock",
+        "reason": "New Medicine",
       });
     }
 
     final url = Uri.parse(
-      "$baseUrl/inventory/medicine/batch-upload",
+      "$baseUrl/inventory/medicine/medicine-upload",
     ); // single bulk endpoint
 
     final response = await http.post(
@@ -366,6 +704,8 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       _showMessage("Bulk upload completed");
+      if (!mounted) return;
+      Navigator.pop(context);
     } else {
       _showMessage("Error during bulk upload: ${response.statusCode}");
     }
@@ -590,80 +930,17 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
 
   DataCell viewPercent(double v) => DataCell(Text("${v.toStringAsFixed(2)}%"));
 
-  DataCell batchCell(
-    TextEditingController controller,
-    int medicineId,
-    int rowIndex,
-  ) {
-    return DataCell(
-      SizedBox(
-        width: 120,
-        child: TextField(
-          controller: controller,
-          cursorColor: primaryColor,
-          decoration: InputDecoration(
-            isDense: true,
-            border: InputBorder.none,
-            suffixIcon: batchAvailability[rowIndex] == null
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
-                    batchAvailability[rowIndex]!
-                        ? Icons.check_circle
-                        : Icons.error,
-                    color: batchAvailability[rowIndex]!
-                        ? Colors.green
-                        : Colors.red,
-                    size: 18,
-                  ),
-          ),
-          onChanged: (value) async {
-            if (value.isEmpty || medicineId == 0) {
-              batchAvailability[rowIndex] = null;
-              setState(() {});
-              return;
-            }
-
-            batchAvailability[rowIndex] = null; // ⏳ checking
-            setState(() {});
-
-            final isAvailable = await validateBatchBackend(
-              medicineId,
-              value.trim(),
-            );
-
-            // ✅ override old result safely
-            if (controller.text.trim() == value.trim()) {
-              batchAvailability[rowIndex] = isAvailable;
-              setState(() {});
-            }
-          },
-        ),
-      ),
-    );
-  }
-
   bool get isSubmitEnabled {
     for (int i = 0; i < controllers.length; i++) {
       final r = controllers[i];
 
       // Medicine & Supplier validation
-      final medicineValid = medicineNameCache.containsKey(
-        "$shopId-${r["MEDICINE_ID"]!.text}",
-      );
+      final medicineValid = medicineNameAvailability[i] == true;
       final supplierValid = supplierNameCache.containsKey(
         "$shopId-${r["Supplier_id"]!.text}",
       );
 
       if (!medicineValid || !supplierValid) return false;
-
-      // 🚨 Batch validation (THIS WAS MISSING)
-      if (!batchAvailability.containsKey(i)) return false; // not checked yet
-      if (batchAvailability[i] == null) return false; // still loading
-      if (batchAvailability[i] == false) return false; // batch exists
     }
 
     return true;
@@ -689,14 +966,20 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text("Cancel"),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(color: primaryColor),
+                        ),
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                         ),
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text("Confirm"),
+                        child: const Text(
+                          "Confirm",
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -732,7 +1015,7 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
         foregroundColor: Colors.white,
         elevation: 2,
         title: const Text(
-          "Bulk Batch Upload",
+          "Bulk Medicine Upload",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -740,165 +1023,192 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: _buildHallCard(
-              hospitalName: widget.hospitalName,
-              hospitalPhoto: widget.hospitalPhoto,
+      body: GestureDetector(
+        onHorizontalDragStart: (_) {},
+        onHorizontalDragUpdate: (_) {},
+        onHorizontalDragEnd: (_) {},
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: buildHospitalCard(
+                hospitalName: widget.hospitalName,
+                hospitalPlace: widget.hospitalPlace,
+                hospitalPhoto: widget.hospitalPhoto,
+              ),
             ),
-          ),
 
-          const Divider(height: 1),
+            const Divider(height: 1),
 
-          Expanded(
-            child: Scrollbar(
-              controller: verticalController,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                controller: verticalController,
+            Expanded(
+              child: GestureDetector(
+                onHorizontalDragStart: (_) {},
+                onHorizontalDragUpdate: (_) {},
+                onHorizontalDragEnd: (_) {},
                 child: Scrollbar(
-                  controller: horizontalController,
+                  controller: verticalController,
                   thumbVisibility: true,
-                  notificationPredicate: (n) =>
-                      n.metrics.axis == Axis.horizontal,
                   child: SingleChildScrollView(
-                    controller: horizontalController,
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: screenWidth + 800),
-                      child: DataTableTheme(
-                        data: DataTableThemeData(
-                          headingRowColor: WidgetStateProperty.all(
-                            Colors.white,
+                    controller: verticalController,
+                    child: Scrollbar(
+                      controller: horizontalController,
+                      thumbVisibility: true,
+                      notificationPredicate: (n) =>
+                          n.metrics.axis == Axis.horizontal,
+                      child: SingleChildScrollView(
+                        controller: horizontalController,
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: screenWidth + 800,
                           ),
-                          headingTextStyle: const TextStyle(
-                            color: primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          dataTextStyle: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 13,
-                          ),
-                          dividerThickness: 1,
-                        ),
-                        child: DataTable(
-                          columnSpacing: 16,
-                          headingRowHeight: 48,
-                          dataRowMinHeight: 46,
-                          columns: const [
-                            DataColumn(label: Text("Medicine")),
-                            DataColumn(label: Text("Batch")),
-                            DataColumn(label: Text("Rack")),
-                            DataColumn(label: Text("HSN")),
-                            DataColumn(label: Text("MFG")),
-                            DataColumn(label: Text("EXP")),
-                            DataColumn(label: Text("Qty")),
-                            DataColumn(label: Text("Free")),
-                            DataColumn(label: Text("Unit")),
-                            DataColumn(label: Text("Rate")),
-                            DataColumn(label: Text("GST%")),
-                            DataColumn(label: Text("MRP")),
-                            DataColumn(label: Text("Profit%")),
-                            DataColumn(label: Text("Supplier")),
-                            DataColumn(label: Text("Purchase Date")),
-                            DataColumn(label: Text("Total Qty")),
-                            DataColumn(label: Text("Total Stock")),
-                            DataColumn(label: Text("GST Amount/Qty")),
-                            DataColumn(label: Text("Base Amount")),
-                            DataColumn(label: Text("Total GST")),
-                            DataColumn(label: Text("Purchase Price")),
-                            DataColumn(label: Text("Purchase Price/Unit")),
-                            DataColumn(label: Text("Purchase Price/Qty")),
-                            DataColumn(label: Text("Selling Price/Unit")),
-                            DataColumn(label: Text("Selling Price/Qty")),
-                          ],
-                          rows: List.generate(controllers.length, (i) {
-                            final r = controllers[i];
-                            final calc = calculateValues(r);
-
-                            DataCell edit(TextEditingController c) => DataCell(
-                              SizedBox(
-                                width: 90,
-                                child: TextField(
-                                  controller: c,
-                                  cursorColor: primaryColor,
-                                  decoration: const InputDecoration(
-                                    isDense: true,
-                                    border: InputBorder.none,
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
+                          child: DataTableTheme(
+                            data: DataTableThemeData(
+                              headingRowColor: WidgetStateProperty.all(
+                                Colors.white,
                               ),
-                            );
-
-                            return DataRow(
-                              cells: [
-                                editableIdWithName(
-                                  controller:
-                                      r["MEDICINE_ID"]!, // ✅ use the existing controller
-                                  fetchName: fetchMedicineName,
-                                ),
-
-                                batchCell(
-                                  r["Batch_no"]!,
-                                  int.tryParse(r["MEDICINE_ID"]!.text) ?? 0,
-                                  i,
-                                ),
-                                edit(r["Rack_no"]!),
-                                edit(r["HSN_code"]!),
-                                datePickerCell(
-                                  controller: r["MFG_Date"]!,
-                                  label: "MFG",
-                                ),
-                                datePickerCell(
-                                  controller: r["EXP_Date"]!,
-                                  label: "EXP",
-                                ),
-                                editInt(r["Quantity"]!),
-                                editInt(r["Free_quantity"]!),
-                                editInt(r["Unit"]!),
-                                editCurrency(r["Rate_per_quantity"]!), // Rate
-                                editPercent(r["GST"]!), // GST %
-                                editCurrency(r["MRP"]!), // MRP
-                                editPercent(r["Profit"]!), // Profit %
-                                editableIdWithName(
-                                  controller: r["Supplier_id"]!,
-                                  fetchName: fetchSupplierName,
-                                ),
-                                datePickerCell(
-                                  controller: r["Purchase_Date"]!,
-                                  label: "Purchase",
-                                ),
-                                viewInt(calc["totalQty"]!),
-                                viewInt(calc["totalStock"]!),
-                                viewCurrency(
-                                  calc["gstPerQty"]!,
-                                ), // GST Amount/Qty
-                                viewCurrency(
-                                  calc["baseAmount"]!,
-                                ), // Base Amount
-                                viewCurrency(calc["totalGst"]!), // Total GST
-                                viewCurrency(
-                                  calc["purchasePrice"]!,
-                                ), // Purchase Price
-                                viewCurrency(
-                                  calc["purchasePerQty"]!,
-                                ), // Purchase Price/Qty
-                                viewCurrency(
-                                  calc["purchasePerUnit"]!,
-                                ), // Purchase Price/Unit
-                                viewCurrency(
-                                  calc["sellingPerUnit"]!,
-                                ), // Selling Price/Unit
-                                viewCurrency(
-                                  calc["sellingPrice"]!,
-                                ), // Selling Price per Quantity
+                              headingTextStyle: const TextStyle(
+                                color: primaryColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              dataTextStyle: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 13,
+                              ),
+                              dividerThickness: 1,
+                            ),
+                            child: DataTable(
+                              columnSpacing: 16,
+                              headingRowHeight: 48,
+                              dataRowMinHeight: 46,
+                              columns: const [
+                                DataColumn(label: Text("Medicine")),
+                                DataColumn(label: Text("NDC Code")),
+                                DataColumn(label: Text("Category")),
+                                DataColumn(label: Text("Reorder")),
+                                DataColumn(label: Text("Batch")),
+                                DataColumn(label: Text("Rack")),
+                                DataColumn(label: Text("HSN")),
+                                DataColumn(label: Text("MFG")),
+                                DataColumn(label: Text("EXP")),
+                                DataColumn(label: Text("Qty")),
+                                DataColumn(label: Text("Free")),
+                                DataColumn(label: Text("Unit")),
+                                DataColumn(label: Text("Rate")),
+                                DataColumn(label: Text("GST%")),
+                                DataColumn(label: Text("MRP")),
+                                DataColumn(label: Text("Profit%")),
+                                DataColumn(label: Text("Supplier")),
+                                DataColumn(label: Text("Purchase Date")),
+                                DataColumn(label: Text("Total Qty")),
+                                DataColumn(label: Text("Total Stock")),
+                                DataColumn(label: Text("GST Amount/Qty")),
+                                DataColumn(label: Text("Base Amount")),
+                                DataColumn(label: Text("Total GST")),
+                                DataColumn(label: Text("Purchase Price")),
+                                DataColumn(label: Text("Purchase Price/Qty")),
+                                DataColumn(label: Text("Purchase Price/Unit")),
+                                DataColumn(label: Text("Selling Price/Qty")),
+                                DataColumn(label: Text("Selling Price/Unit")),
                               ],
-                            );
-                          }),
+                              rows: List.generate(controllers.length, (i) {
+                                final r = controllers[i];
+                                final calc = calculateValues(r);
+
+                                DataCell edit(TextEditingController c) =>
+                                    DataCell(
+                                      SizedBox(
+                                        width: 90,
+                                        child: TextField(
+                                          controller: c,
+                                          cursorColor: primaryColor,
+                                          decoration: const InputDecoration(
+                                            isDense: true,
+                                            border: InputBorder.none,
+                                          ),
+                                          onChanged: (_) => setState(() {}),
+                                        ),
+                                      ),
+                                    );
+
+                                return DataRow(
+                                  cells: [
+                                    medicineNameCell(
+                                      controller: r["MEDICINE_NAME"]!,
+                                      rowIndex: i,
+                                      category: r["Category"]!.text == 'Other'
+                                          ? r["Other_Category"]!
+                                          : r["Category"]!,
+                                    ),
+                                    edit(r["NDC_CODE"]!),
+                                    categoryCell(
+                                      categoryController:
+                                          r["Category"]!.text.toLowerCase() ==
+                                              'other'
+                                          ? r["Other_Category"]!
+                                          : r["Category"]!,
+                                      rowIndex: i,
+                                      medicineController: r["MEDICINE_NAME"]!,
+                                    ),
+                                    edit(r["Reorder"]!),
+                                    edit(r["Batch_no"]!),
+                                    edit(r["Rack_no"]!),
+                                    edit(r["HSN_code"]!),
+                                    datePickerCell(
+                                      controller: r["MFG_Date"]!,
+                                      label: "MFG",
+                                    ),
+                                    datePickerCell(
+                                      controller: r["EXP_Date"]!,
+                                      label: "EXP",
+                                    ),
+                                    editInt(r["Quantity"]!),
+                                    editInt(r["Free_quantity"]!),
+                                    editInt(r["Unit"]!),
+                                    editCurrency(
+                                      r["Rate_per_quantity"]!,
+                                    ), // Rate
+                                    editPercent(r["GST"]!), // GST %
+                                    editCurrency(r["MRP"]!), // MRP
+                                    editPercent(r["Profit"]!), // Profit %
+                                    editableIdWithName(
+                                      controller: r["Supplier_id"]!,
+                                      fetchName: fetchSupplierName,
+                                    ),
+                                    datePickerCell(
+                                      controller: r["Purchase_Date"]!,
+                                      label: "Purchase",
+                                    ),
+                                    viewInt(calc["totalQty"]!),
+                                    viewInt(calc["totalStock"]!),
+                                    viewCurrency(
+                                      calc["gstPerQty"]!,
+                                    ), // GST Amount/Qty
+                                    viewCurrency(
+                                      calc["baseAmount"]!,
+                                    ), // Base Amount
+                                    viewCurrency(
+                                      calc["totalGst"]!,
+                                    ), // Total GST
+                                    viewCurrency(
+                                      calc["purchasePrice"]!,
+                                    ), // Purchase Price
+                                    viewCurrency(
+                                      calc["purchasePerQty"]!,
+                                    ), // Purchase Price/Qty
+                                    viewCurrency(calc["purchasePerUnit"]!),
+                                    viewCurrency(
+                                      calc["sellingPrice"]!,
+                                    ), // Selling Price per Quantity// Purchase Price/Unit
+                                    viewCurrency(
+                                      calc["sellingPerUnit"]!,
+                                    ), // Selling Price/Unit
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -906,11 +1216,11 @@ class _BulkMedicineUploadState extends State<BulkMedicineUpload> {
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 20),
-          submitButton(), // Add this below DataTable
-        ],
+            const SizedBox(height: 20),
+            submitButton(), // Add this below DataTable
+          ],
+        ),
       ),
     );
   }

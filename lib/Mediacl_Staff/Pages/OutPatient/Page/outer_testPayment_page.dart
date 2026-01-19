@@ -452,7 +452,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
   Widget build(BuildContext context) {
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
     final consultation = widget.fee['Consultation'];
-    final temperature = consultation['temperature'].toString();
+    //final temperature = consultation['temperature'].toString();
     final bloodPressure = consultation['bp'] ?? '_';
     final sugar = consultation['sugar'] ?? '_';
     final height = consultation['height'].toString() ?? '_';
@@ -696,7 +696,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
 
                     if (widget.fee['type'] == 'REGISTRATIONFEE')
                       if (hasAnyVital(
-                        temperature: temperature,
+                        //temperature: temperature,
                         bloodPressure: bloodPressure,
                         sugar: sugar,
                         height: height,
@@ -706,7 +706,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                         SpO2: SpO2,
                       ))
                         _buildVitalsDetails(
-                          temperature: temperature,
+                          //temperature: temperature,
                           bloodPressure: bloodPressure,
                           sugar: sugar,
                           height: height,
@@ -1040,7 +1040,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                                         widget
                                             .fee['Consultation']?['sugarTestFee'] ??
                                         0,
-                                    temperature: temperature,
+                                    // temperature: temperature,
                                     bloodPressure: bloodPressure,
                                     sugar: sugar,
                                     height: height,
@@ -1171,7 +1171,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
   }
 
   Widget _buildVitalsDetails({
-    String? temperature,
+    //String? temperature,
     String? bloodPressure,
     String? sugar,
     String? height,
@@ -1186,8 +1186,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
         /// Header
         const SizedBox(height: 8),
 
-        if (_isValid(temperature)) _vitalRow("Temperature", "$temperature °F"),
-
+        //if (_isValid(temperature)) _vitalRow("Temperature", "$temperature °F"),
         if (_isValid(bloodPressure)) _vitalRow("BP", bloodPressure!),
 
         if (_isValid(sugar)) _vitalRow("Sugar", "$sugar mg/dL"),

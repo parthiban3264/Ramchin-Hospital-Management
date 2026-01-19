@@ -32,10 +32,8 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
   bool _isGenerating = false;
   bool _includeAllPatientsDaily = false;
   bool _includeAllPatientsMonthly = false;
-  bool _isDailyLoading = false;
-  bool _isMonthlyLoading = false;
-  bool _isYearlyLoading = false;
   int _currentTabIndex = 0; // <-- track selected tab
+  bool _isPageLoading = true;
 
   // Hospital Info
   String hospitalName = "";
@@ -43,16 +41,61 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
   String hospitalPhoto = "";
   List<Map<String, dynamic>> _allExpenses = [];
   List<Map<String, dynamic>> _allDrawings = [];
+  List<Map<String, dynamic>> _dailyPayments = [];
+  List<Map<String, dynamic>> _monthlyPayments = [];
+  List<Map<String, dynamic>> _yearlyPayments = [];
 
   final List<String> months = DateFormat.MMMM().dateSymbols.MONTHS;
 
   @override
   void initState() {
     super.initState();
-    _loadHospitalInfo();
-    _loadPayments();
-    _loadExpenses();
-    _loadDrawings();
+    _initPage();
+  }
+
+  Future<void> _initPage() async {
+    await Future.wait([
+      _loadHospitalInfo(),
+      _loadPayments(),
+      _loadExpenses(),
+      _loadDrawings(),
+    ]);
+
+    _recalculatePaymentFilters();
+
+    setState(() {
+      _isPageLoading = false;
+    });
+  }
+
+  void _recalculatePaymentFilters() {
+    _dailyPayments = _filterPayments(ReportType.daily);
+    _monthlyPayments = _filterPayments(ReportType.monthly);
+    _yearlyPayments = _filterPayments(ReportType.yearly);
+  }
+
+  final Map<int, Map<ReportType, bool>> _loadingMap = {
+    0: {
+      ReportType.daily: false,
+      ReportType.monthly: false,
+      ReportType.yearly: false,
+    },
+    1: {
+      ReportType.daily: false,
+      ReportType.monthly: false,
+      ReportType.yearly: false,
+    },
+  };
+
+  bool _isLoading(ReportType type) {
+    return _loadingMap[_currentTabIndex]![type]!;
+  }
+
+  void _toggleLoading(ReportType type) {
+    setState(() {
+      _loadingMap[_currentTabIndex]![type] =
+          !_loadingMap[_currentTabIndex]![type]!;
+    });
   }
 
   // ---------------- LOAD HOSPITAL INFO ----------------
@@ -76,6 +119,10 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
       return map;
     }).toList();
 
+    // setState(() {
+    //   _allPayments = parsed;
+    //   _recalculatePaymentFilters(); // ✅ IMPORTANT
+    // });
     setState(() {
       _allExpenses = parsed;
     });
@@ -381,6 +428,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
           setState(() {
             selectedDay = tempDay;
             selectedMonth = tempMonth;
+            _recalculatePaymentFilters();
           });
         },
       ),
@@ -407,6 +455,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
           setState(() {
             selectedMonth = tempMonth;
             selectedYear = tempYear;
+            _recalculatePaymentFilters();
           });
         },
       ),
@@ -421,7 +470,10 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
       builder: (_) => _pickerDialog(
         title: "Select Year",
         content: _yearDropdown(tempYear, (v) => tempYear = v),
-        onOk: () => setState(() => selectedYear = tempYear),
+        onOk: () => setState(() {
+          selectedYear = tempYear;
+          _recalculatePaymentFilters();
+        }),
       ),
     );
   }
@@ -432,23 +484,32 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F3EE),
       appBar: _buildAppBar(),
-      body: _buildTabBody(), // <-- build content based on selected tab
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentTabIndex,
-        selectedItemColor: themeColor,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => _currentTabIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: "Account List",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "Patient List",
-          ),
-        ],
-      ),
+      body: _isPageLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildTabBody(),
+      bottomNavigationBar: _isPageLoading
+          ? null
+          : BottomNavigationBar(
+              currentIndex: _currentTabIndex,
+              selectedItemColor: themeColor,
+              unselectedItemColor: Colors.grey,
+              onTap: (index) {
+                setState(() {
+                  _currentTabIndex = index;
+                  _loadingMap[index]!.updateAll((_, __) => false);
+                });
+              },
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.account_balance_wallet),
+                  label: "Account List",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people),
+                  label: "Patient List",
+                ),
+              ],
+            ),
     );
   }
 
@@ -457,58 +518,122 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // _reportCard(
+          //   title: "DAILY REPORT",
+          //   subtitle: "Select day & month",
+          //   value: "$selectedDay $selectedMonth",
+          //   showToggle: _currentTabIndex == 1 ? true : false,
+          //   toggleValue: _includeAllPatientsDaily,
+          //   onToggleChanged: (v) =>
+          //       setState(() => _includeAllPatientsDaily = v),
+          //   isLoading: _isDailyLoading,
+          //   onPick: _pickDaily,
+          //   onGenerate: (includeAll) async {
+          //     await _generateReport(
+          //       ReportType.daily,
+          //       includeAll,
+          //       () => setState(() => _isDailyLoading = !_isDailyLoading),
+          //       tabIndex: _currentTabIndex, // <-- pass tab index
+          //     );
+          //   },
+          // ),
           _reportCard(
             title: "DAILY REPORT",
             subtitle: "Select day & month",
             value: "$selectedDay $selectedMonth",
+            //showToggle: _currentTabIndex == 1,
             showToggle: _currentTabIndex == 1 ? true : false,
             toggleValue: _includeAllPatientsDaily,
             onToggleChanged: (v) =>
                 setState(() => _includeAllPatientsDaily = v),
-            isLoading: _isDailyLoading,
+            isLoading: _isLoading(ReportType.daily),
             onPick: _pickDaily,
             onGenerate: (includeAll) async {
+              _toggleLoading(ReportType.daily);
               await _generateReport(
                 ReportType.daily,
                 includeAll,
-                () => setState(() => _isDailyLoading = !_isDailyLoading),
-                tabIndex: _currentTabIndex, // <-- pass tab index
+                () {}, // <-- no internal toggle now
+                tabIndex: _currentTabIndex,
               );
+              _toggleLoading(ReportType.daily);
             },
           ),
+
+          // _reportCard(
+          //   title: "MONTHLY REPORT",
+          //   subtitle: "Select Mon & year",
+          //   value: "$selectedMonth $selectedYear",
+          //   showToggle: _currentTabIndex == 1 ? true : false,
+          //   toggleValue: _includeAllPatientsMonthly,
+          //   isLoading: _isLoading(ReportType.monthly),
+          //   onToggleChanged: (v) =>
+          //       setState(() => _includeAllPatientsMonthly = v),
+          //   onPick: _pickMonthly,
+          //   onGenerate: (includeAll) async {
+          //     await _generateReport(
+          //       ReportType.monthly,
+          //       includeAll,
+          //       () => {},
+          //       tabIndex: _currentTabIndex,
+          //     );
+          //   },
+          // ),
           _reportCard(
             title: "MONTHLY REPORT",
             subtitle: "Select Mon & year",
             value: "$selectedMonth $selectedYear",
+            //showToggle: _currentTabIndex == 1,
             showToggle: _currentTabIndex == 1 ? true : false,
             toggleValue: _includeAllPatientsMonthly,
-            isLoading: _isMonthlyLoading,
             onToggleChanged: (v) =>
                 setState(() => _includeAllPatientsMonthly = v),
+            isLoading: _isLoading(ReportType.monthly),
             onPick: _pickMonthly,
             onGenerate: (includeAll) async {
+              _toggleLoading(ReportType.monthly);
               await _generateReport(
                 ReportType.monthly,
                 includeAll,
-                () => setState(() => _isMonthlyLoading = !_isMonthlyLoading),
+                () {}, // <-- no internal toggle now
                 tabIndex: _currentTabIndex,
               );
+              _toggleLoading(ReportType.monthly);
             },
           ),
+
+          // _reportCard(
+          //   title: "YEARLY REPORT",
+          //   subtitle: "Select Year",
+          //   value: "$selectedYear",
+          //   showToggle: false,
+          //   onPick: _pickYearly,
+          //   isLoading: _isYearlyLoading,
+          //   onGenerate: (includeAll) async {
+          //     await _generateReport(
+          //       ReportType.yearly,
+          //       false,
+          //       () => setState(() => _isYearlyLoading = !_isYearlyLoading),
+          //       tabIndex: _currentTabIndex,
+          //     );
+          //   },
+          // ),
           _reportCard(
             title: "YEARLY REPORT",
             subtitle: "Select Year",
             value: "$selectedYear",
             showToggle: false,
+            isLoading: _isLoading(ReportType.yearly),
             onPick: _pickYearly,
-            isLoading: _isYearlyLoading,
-            onGenerate: (includeAll) async {
+            onGenerate: (_) async {
+              _toggleLoading(ReportType.yearly);
               await _generateReport(
                 ReportType.yearly,
                 false,
-                () => setState(() => _isYearlyLoading = !_isYearlyLoading),
+                () {},
                 tabIndex: _currentTabIndex,
               );
+              _toggleLoading(ReportType.yearly);
             },
           ),
         ],
@@ -587,7 +712,20 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
     Function(bool)? onToggleChanged,
   }) {
     final bool isDisabled = value.trim().isEmpty || isLoading;
-    final filteredDataEmpty = _filterPayments(typeFromTitle(title)).isEmpty;
+    //final filteredDataEmpty = _filterPayments(typeFromTitle(title)).isEmpty;
+    bool filteredDataEmpty;
+
+    switch (typeFromTitle(title)) {
+      case ReportType.daily:
+        filteredDataEmpty = _dailyPayments.isEmpty;
+        break;
+      case ReportType.monthly:
+        filteredDataEmpty = _monthlyPayments.isEmpty;
+        break;
+      case ReportType.yearly:
+        filteredDataEmpty = _yearlyPayments.isEmpty;
+        break;
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),

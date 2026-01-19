@@ -15,6 +15,7 @@ class ScanQueue extends StatefulWidget {
     required Map<String, dynamic> record,
     required int mode,
     required String type,
+    required int currentIndex,
   })
   pageBuilder;
 
@@ -22,16 +23,31 @@ class ScanQueue extends StatefulWidget {
   State<ScanQueue> createState() => _ScanQueueState();
 }
 
-class _ScanQueueState extends State<ScanQueue> {
+class _ScanQueueState extends State<ScanQueue>
+    with SingleTickerProviderStateMixin {
   late Future<List<dynamic>> futureQueue;
   final Color primaryColor = const Color(0xFFBF955E);
   int _currentIndex = 0;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _loadQueue();
+    _tabController = TabController(length: 2, vsync: this);
   }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _loadQueue();
+  // }
 
   void _loadQueue() {
     futureQueue = TestingScanningService().getAllTestingAndScanning(
@@ -84,6 +100,41 @@ class _ScanQueueState extends State<ScanQueue> {
     }
   }
 
+  DateTime? parseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return null;
+
+    try {
+      // Backend format: 2025-12-30 06:39 PM
+      return DateFormat('yyyy-MM-dd hh:mm a').parse(dateStr);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool isToday(String? dateStr) {
+    final date = parseDate(dateStr);
+    if (date == null) return false;
+
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  bool isLastThreeDays(String? dateStr) {
+    final date = parseDate(dateStr);
+    if (date == null) return false;
+
+    final now = DateTime.now();
+    final threeDaysAgo = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 3));
+
+    return date.isAfter(threeDaysAgo) && !isToday(dateStr);
+  }
+
   IconData genderIcon(String gender) {
     switch (gender.toLowerCase()) {
       case 'male':
@@ -115,24 +166,146 @@ class _ScanQueueState extends State<ScanQueue> {
 
           final records = snapshot.data ?? [];
 
-          final pendingRecords = records
-              .where((r) => r['queueStatus'] == 'PENDING')
+          // final pendingRecords = records
+          //     .where((r) => r['queueStatus'] == 'PENDING')
+          //     .toList();
+          //
+          // final completedRecords = records
+          //     .where((r) => r['queueStatus'] == 'COMPLETED')
+          //     .toList();
+          final todayPending = records
+              .where(
+                (r) =>
+                    r['queueStatus'] == 'PENDING' &&
+                    r['createdAt'] != null &&
+                    isToday(r['createdAt']),
+              )
               .toList();
 
-          final completedRecords = records
-              .where((r) => r['queueStatus'] == 'COMPLETED')
+          final previousPending = records
+              .where(
+                (r) =>
+                    r['queueStatus'] == 'PENDING' &&
+                    r['createdAt'] != null &&
+                    isLastThreeDays(r['createdAt']),
+              )
               .toList();
 
-          final tabRecords = [pendingRecords, completedRecords];
+          final todayScanned = records
+              .where(
+                (r) =>
+                    r['queueStatus'] == 'COMPLETED' &&
+                    r['createdAt'] != null &&
+                    r['status'] != 'COMPLETED' &&
+                    isToday(r['createdAt']),
+              )
+              .toList();
+
+          final previousScanned = records
+              .where(
+                (r) =>
+                    r['queueStatus'] == 'COMPLETED' &&
+                    r['createdAt'] != null &&
+                    r['status'] != 'COMPLETED' &&
+                    isLastThreeDays(r['createdAt']),
+              )
+              .toList();
+          final todayHistoryCompleted = records
+              .where(
+                (r) =>
+                    r['status'] == 'COMPLETED' &&
+                    r['createdAt'] != null &&
+                    isToday(r['createdAt']),
+              )
+              .toList();
+
+          final previousHistoryCompleted = records
+              .where(
+                (r) =>
+                    r['status'] == 'COMPLETED' &&
+                    r['createdAt'] != null &&
+                    isLastThreeDays(r['createdAt']),
+              )
+              .toList();
+          int getCurrentCount() {
+            final isTodayTab = _tabController.index == 0;
+
+            if (_currentIndex == 0) {
+              // Pending
+              return isTodayTab ? todayPending.length : previousPending.length;
+            } else if (_currentIndex == 1) {
+              // Scanned
+              return isTodayTab ? todayScanned.length : previousScanned.length;
+            } else {
+              // History
+              return isTodayTab
+                  ? todayHistoryCompleted.length
+                  : previousHistoryCompleted.length;
+            }
+          }
+
+          //final tabRecords = [pendingRecords, completedRecords];
 
           return Column(
             children: [
-              _buildCounter(pendingRecords.length),
-              Expanded(child: _buildQueueList(tabRecords[_currentIndex])),
+              TabBar(
+                controller: _tabController,
+                labelColor: primaryColor,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: primaryColor,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: "Today"),
+                  Tab(text: "Previous"),
+                ],
+              ),
+              // _buildCounter(todayPending.length),
+              _buildCounter(getCurrentCount()),
+
+              //Expanded(child: _buildQueueList(tabRecords[_currentIndex])),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // ================= TODAY =================
+                    _buildQueueList(
+                      _currentIndex == 0
+                          ? todayPending
+                          : _currentIndex == 1
+                          ? todayScanned
+                          : todayHistoryCompleted,
+                    ),
+
+                    // ================= PREVIOUS =================
+                    _buildQueueList(
+                      _currentIndex == 0
+                          ? previousPending
+                          : _currentIndex == 1
+                          ? previousScanned
+                          : previousHistoryCompleted,
+                    ),
+                  ],
+                ),
+              ),
             ],
           );
         },
       ),
+      // bottomNavigationBar: BottomNavigationBar(
+      //   currentIndex: _currentIndex,
+      //   selectedItemColor: primaryColor,
+      //   onTap: (index) => setState(() => _currentIndex = index),
+      //   items: const [
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.pending_actions),
+      //       label: "Pending",
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.check_circle),
+      //       label: "Scanned",
+      //     ),
+      //   ],
+      // ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: primaryColor,
@@ -146,6 +319,7 @@ class _ScanQueueState extends State<ScanQueue> {
             icon: Icon(Icons.check_circle),
             label: "Scanned",
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
         ],
       ),
     );
@@ -210,7 +384,7 @@ class _ScanQueueState extends State<ScanQueue> {
 
   Widget _buildCounter(int count) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -250,9 +424,9 @@ class _ScanQueueState extends State<ScanQueue> {
               repeat: true,
             ),
             const SizedBox(height: 16),
-            const Text(
-              "No X-Ray patients in this tab",
-              style: TextStyle(fontSize: 16, color: Colors.black54),
+            Text(
+              "No ${widget.type} patients in this tab",
+              style: const TextStyle(fontSize: 16, color: Colors.black54),
             ),
           ],
         ),
@@ -260,7 +434,7 @@ class _ScanQueueState extends State<ScanQueue> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       itemCount: records.length,
       itemBuilder: (context, index) {
         final record = records[index];
@@ -289,6 +463,7 @@ class _ScanQueueState extends State<ScanQueue> {
                   record: record,
                   mode: mode,
                   type: widget.type,
+                  currentIndex: _currentIndex,
                 ),
               ),
             );

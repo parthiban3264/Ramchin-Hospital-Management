@@ -14,6 +14,7 @@ class LabPage extends StatefulWidget {
   final int currentIndex;
   final String queueStaus; // "COMPLETED" or "PENDING"
   final int mode; //  0 or 1
+  final int selectedIndex;
 
   const LabPage({
     super.key,
@@ -21,6 +22,7 @@ class LabPage extends StatefulWidget {
     required this.currentIndex,
     required this.queueStaus,
     required this.mode,
+    required this.selectedIndex,
   });
 
   @override
@@ -616,39 +618,41 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                         showButtons: true,
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade600,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          elevation: 8,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 50,
-                            vertical: 14,
-                          ),
-                        ),
-                        onPressed: _isLoading
-                            ? null
-                            : _handleSubmit, // disable when loading
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.white,
+                      widget.selectedIndex == 2
+                          ? const SizedBox()
+                          : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              )
-                            : const Text(
-                                'Submit',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                elevation: 8,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 50,
+                                  vertical: 14,
                                 ),
                               ),
-                      ),
+                              onPressed: _isLoading
+                                  ? null
+                                  : _handleSubmit, // disable when loading
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Submit',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
                       const SizedBox(height: 50),
                     ],
                   ),
