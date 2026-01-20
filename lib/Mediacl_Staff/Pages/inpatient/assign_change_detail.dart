@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../../../../../../utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import './addmission_history_detail.dart';
+import './adimission_detail_page.dart';
 
 const Color royal = Color(0xFFBF955E);
 
