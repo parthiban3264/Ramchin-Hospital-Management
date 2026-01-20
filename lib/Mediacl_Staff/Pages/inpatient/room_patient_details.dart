@@ -237,10 +237,10 @@ class _WardsAndBedsPageState extends State<WardsAndBedsPage> {
                                                   ),
                                                   const SizedBox(height: 6),
                                                   Text(
-                                                    "Doctor: ${admission['doctor']['name']}",
+                                                    "Doctor: ${admission['doctor']?['name']}",
                                                   ),
                                                   Text(
-                                                    "Nurse: ${admission['nurse']['name']}",
+                                                    "Nurse: ${admission['nurse']?['name']}",
                                                   ),
                                                   const SizedBox(height: 8),
                                                   Align(

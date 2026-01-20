@@ -43,6 +43,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   Set<int> expandedWards = {};
   Map<String, Set<int>> selectedBeds = {};
   final patientIdCtrl = TextEditingController();
+  bool isAdvancedPayment = true;
 
   @override
   void initState() {
@@ -284,6 +285,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
           "relation": admitByRelationCtrl.text,
         },
       "createdAt": _dateTime.toString(),
+      "isAdvanced": isAdvancedPayment,
     };
 
     final res = await http.post(
@@ -757,7 +759,41 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: CheckboxListTile(
+                        value: isAdvancedPayment,
+                        onChanged: (value) {
+                          setState(() {
+                            isAdvancedPayment = value!;
+                          });
+                        },
+                        title: const Text(
+                          "Advanced Payment",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          "Pay a partial amount in advance",
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        controlAffinity:
+                            ListTileControlAffinity.trailing, // 👈 RIGHT SIDE
+                        contentPadding: EdgeInsets.zero,
+                        activeColor: Colors.green,
+                      ),
+                    ),
+
+                    ///need to add check box default true store on varible
+                    const SizedBox(height: 10),
 
                     SizedBox(
                       width: double.infinity,

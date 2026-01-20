@@ -139,7 +139,8 @@ class PaymentService {
           final status = item['status']?.toString().toLowerCase();
           return status == 'pending' ||
               status == 'paid' ||
-              status == 'cancelled';
+              status == 'cancelled' ||
+              status == 'partially_paid';
         }).toList();
 
         // Sort by createdAt (oldest first)

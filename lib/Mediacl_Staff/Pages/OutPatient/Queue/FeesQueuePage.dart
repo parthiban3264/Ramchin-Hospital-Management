@@ -114,8 +114,13 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
 
   void _applyHistoryFilter() {
     List<dynamic> filtered = _allFees
-        .where((e) => e["status"] == "paid")
+        .where((e) => e["status"] == "paid" || e["status"] == "partially_paid")
         .toList();
+
+    // List<dynamic> filtered = _allFees.where((e) {
+    //   final status = e["status"]?.toString().toLowerCase();
+    //   return status == "paid" || status == "partially_paid";PARTIALLY_PAID
+    // }).toList();
 
     final search = searchController.text.trim().toLowerCase();
 

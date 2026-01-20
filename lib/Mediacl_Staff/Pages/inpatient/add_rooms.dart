@@ -421,7 +421,7 @@ class _WardsPageState extends State<WardsPage> {
 
               /// ADD BED BUTTON
               Center(
-                child: ElevatedButton.icon(
+                child: IconButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: royal,
                     shape: RoundedRectangleBorder(
@@ -435,10 +435,10 @@ class _WardsPageState extends State<WardsPage> {
                     });
                   },
                   icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text(
-                    "Add Bed",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  // label: const Text(
+                  //   "Add Bed",
+                  //   style: TextStyle(color: Colors.white),
+                  // ),
                 ),
               ),
 

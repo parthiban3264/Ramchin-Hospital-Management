@@ -205,7 +205,6 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
   }
 
   Widget _buildPatientCard(Map<String, dynamic> consultation) {
-    print('consultation $consultation');
     final patient = consultation['Patient'] ?? {};
     final name = patient['name'] ?? 'Unknown';
     final tokenNo =

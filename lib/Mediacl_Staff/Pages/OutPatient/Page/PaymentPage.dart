@@ -291,14 +291,16 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     setState(() => _isProcessing = true);
     final staffId = prefs.getString('userId');
 
-    bool isDischarged = false;
-
-    if (widget.fee['type'] == 'ADMISSIONFEE') {
-      isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
-    }
-
+    // if (widget.fee['type'] == 'ADMISSIONFEE') {
+    //   isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
+    // }
+    bool isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
     final response = await PaymentService().updatePayment(paymentId, {
-      'status': isDischarged ? 'PAID' : 'PARTIALLY_PAID',
+      'status': (widget.fee['type'] != 'ADMISSIONFEE')
+          ? 'PAID'
+          : isDischarged == false
+          ? 'PARTIALLY_PAID'
+          : 'PAID',
       // 'transactionId': paymentResult['transactionId'],
       "staff_Id": staffId.toString(),
       "paymentType": paymentMode,
@@ -555,6 +557,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
     final String? roomName = ward?['name'];
     final num roomRent = num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0;
+
+    final total = widget.index != 1
+        ? calculateTotal(widget.fee['amount']) -
+              (widget.fee['received_Amount'] ?? 0)
+        : calculateTotal(widget.fee['amount']);
 
     List<MapEntry<String, num>> parseSelectedOption(dynamic selectedOption) {
       if (selectedOption is Map) {
@@ -963,20 +970,23 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   ],
                   if (widget.fee['type'] == 'ADMISSIONFEE') ...[
                     // 🔹 Header only
-                    feeHeader("Admission Fee"),
-                    if (widget.fee['received_Amount'] != null &&
-                        widget.fee['received_Amount'] != 0) ...[
-                      const SizedBox(height: 5),
-                      feeHeaderWithAmount(
-                        "Received Amount",
-                        widget.fee['received_Amount'],
-                      ),
+                    feeHeader("Room & Bed charges"),
+                    if (widget.index != 1) ...[
+                      if (widget.fee['received_Amount'] != null &&
+                          widget.fee['received_Amount'] != 0) ...[
+                        const SizedBox(height: 5),
+                        feeHeaderWithAmount(
+                          "Received Amount",
+                          widget.fee['received_Amount'],
+                        ),
+                      ],
                     ],
 
                     // 🔹 Room
                     if (ward?['name'] != null)
                       feeRowWithRemove(
-                        title: "Room ${ward['name']}",
+                        title:
+                            "${ward['type']} - ${ward['name']}( ${widget.fee['Admission']['bed']['bedNo']} )",
                         amount:
                             num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0,
                         removable: false,
@@ -992,18 +1002,62 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     //     removable: false,
                     //   ),
                     // 🔹 Charges (only PENDING)
-                    for (final charge in admission?['charges'] ?? [])
-                      if ((charge['status'] ?? '').toString().toUpperCase() ==
-                          'PENDING')
-                        feeRowWithRemove(
-                          title: charge['description'] ?? 'Charge',
-                          amount:
-                              num.tryParse(
-                                charge['amount']?.toString() ?? '0',
-                              ) ??
-                              0,
-                          removable: false,
-                        ),
+                    // if (widget.index != 1)
+                    //   {
+                    //     for (final charge in admission?['charges'] ?? [])
+                    //       if ((charge['status'] ?? '')
+                    //               .toString()
+                    //               .toUpperCase() ==
+                    //           'PENDING')
+                    //         feeRowWithRemove(
+                    //           title: charge['description'] ?? 'Charge',
+                    //           amount:
+                    //               num.tryParse(
+                    //                 charge['amount']?.toString() ?? '0',
+                    //               ) ??
+                    //               0,
+                    //           removable: false,
+                    //         ),
+                    //   }
+                    // else
+                    //   {
+                    //     for (final charge in admission?['charges'] ?? [])
+                    //       feeRowWithRemove(
+                    //         title: charge['description'] ?? 'Charge',
+                    //         amount:
+                    //             num.tryParse(
+                    //               charge['amount']?.toString() ?? '0',
+                    //             ) ??
+                    //             0,
+                    //         removable: false,
+                    //       ),
+                    //   },
+                    if (widget.index == 1)
+                      for (final charge in admission?['charges'] ?? [])
+                        if ((charge['status'] ?? '').toString().toUpperCase() ==
+                            'PAID')
+                          feeRowWithRemove(
+                            title: charge['description'] ?? 'Charge',
+                            amount:
+                                num.tryParse(
+                                  charge['amount']?.toString() ?? '0',
+                                ) ??
+                                0,
+                            removable: false,
+                          ),
+                    if (widget.index != 1)
+                      for (final charge in admission?['charges'] ?? [])
+                        if ((charge['status'] ?? '').toString().toUpperCase() ==
+                            'PENDING')
+                          feeRowWithRemove(
+                            title: charge['description'] ?? 'Charge',
+                            amount:
+                                num.tryParse(
+                                  charge['amount']?.toString() ?? '0',
+                                ) ??
+                                0,
+                            removable: false,
+                          ),
                   ],
 
                   if (tests.isNotEmpty) ...[
@@ -1190,10 +1244,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
                         Spacer(),
                       ],
+
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          "Total : ₹ ${calculateTotal(widget.fee['amount']) - (widget.fee['received_Amount'] ?? 0)}",
+                          "Total : ₹ $total",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -1255,7 +1310,9 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                     await SharedPreferences.getInstance();
                                 final paymentId = widget.fee['id'];
                                 final consultationId =
-                                    widget.fee['consultation_Id'];
+                                    widget.fee['type'] == 'ADMISSIONFEE'
+                                    ? widget.fee['Admission']['id']
+                                    : widget.fee['consultation_Id'];
                                 final staffId = prefs.getString('userId');
                                 if (context.mounted) {
                                   _showCancelDialog(
@@ -1802,11 +1859,17 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               'updatedAt': dateTime.toString(),
                             });
 
-                            /// 🔹 Update Consultation
-                            await ConsultationService().updateConsultation(
-                              consultationId,
-                              {'status': 'CANCELLED'},
-                            );
+                            widget.fee['type'] == 'ADMISSIONFEE'
+                                ? await ChargeService().updateStatusByAdmission(
+                                    admissionId: consultationId,
+                                    status: 'CANCELLED',
+                                  )
+                                :
+                                  /// 🔹 Update Consultation
+                                  await ConsultationService()
+                                      .updateConsultation(consultationId, {
+                                        'status': 'CANCELLED',
+                                      });
 
                             if (context.mounted) {
                               Navigator.pop(ctx); // close dialog

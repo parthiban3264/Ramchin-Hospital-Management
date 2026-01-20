@@ -182,8 +182,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                           // Existing buttons (unchanged logic)
                           //-----------------------------------
                           if (cashierPermissionIds.contains(12) ||
-                              cashierPermissionIds.contains(26) ||
-                              cashierPermissionIds.contains(27))
+                              cashierPermissionIds.contains(26))
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -200,21 +199,21 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                       );
                                     },
                                   ),
-                                if (cashierPermissionIds.contains(27))
-                                  _buildActionItem(
-                                    Icons.currency_rupee,
-                                    "TEST PAYMENT \n ",
-                                    () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const FeesTestQueuePage(),
-                                        ),
-                                      );
-                                    },
-                                  ),
 
+                                // if (cashierPermissionIds.contains(27))
+                                //   _buildActionItem(
+                                //     Icons.currency_rupee,
+                                //     "TEST PAYMENT \n ",
+                                //     () {
+                                //       Navigator.push(
+                                //         context,
+                                //         MaterialPageRoute(
+                                //           builder: (_) =>
+                                //               const FeesTestQueuePage(),
+                                //         ),
+                                //       );
+                                //     },
+                                //   ),
                                 if (cashierPermissionIds.contains(26))
                                   _buildActionItem(
                                     Icons.how_to_reg,
