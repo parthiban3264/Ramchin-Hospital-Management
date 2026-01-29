@@ -92,6 +92,8 @@ class _ScanPageState extends State<ScanPage>
   Map<String, String> resultMap = {};
 
   void _handleSubmit() async {
+    print(widget.record);
+
     noteControllers.forEach((key, controller) {
       resultMap[key] = controller.text.trim();
     });
@@ -160,24 +162,35 @@ class _ScanPageState extends State<ScanPage>
   }
 
   void handelSubmitReport() async {
+    print(widget.record);
     try {
       setState(() => _isLoading = true);
       final consultationId = (widget.record.isNotEmpty)
           ? widget.record['consulateId']
           : null;
+      print(consultationId);
 
       final id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
       await TestingScanningService().updateTesting(id, {'status': 'COMPLETED'});
-      print('widget ${widget.record}');
-      // 🧾 Update Consultation record
+      final con = await ConsultationService().getConsultationByID(
+        id: consultationId,
+      );
+
+      final bool isIP =
+          con['data']['status'].toString().toUpperCase() == 'ADMITTED';
+
       final bool consultationTest =
           widget.record['Patient']['isTestOnly'] ?? false;
 
-      print('consultationTest $consultationTest');
       if (consultationId != null) {
         await ConsultationService().updateConsultation(consultationId, {
-          'status': consultationTest == false ? 'ENDPROCESSING' : "COMPLETED",
+          'status': consultationTest == false
+              ? 'ENDPROCESSING'
+              : isIP
+              ? 'ADMITTED'
+              : "COMPLETED",
+
           'scanningTesting': false,
           'updatedAt': _dateTime.toString(),
         });
@@ -246,7 +259,7 @@ class _ScanPageState extends State<ScanPage>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
-      appBar: buildAppbar(context: context),
+      appBar: buildAppbar(context: context, scan: widget.type),
       body: widget.mode == 2
           ? SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -323,7 +336,7 @@ class _ScanPageState extends State<ScanPage>
                           controller: _descriptionController,
                           maxLines: 4,
                           decoration: InputDecoration(
-                            hintText: "Enter Ct-Scan report or notes...",
+                            hintText: "Enter ${widget.type} report or notes...",
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

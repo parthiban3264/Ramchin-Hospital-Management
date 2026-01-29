@@ -313,7 +313,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
       // final consultationId = consultationList.isNotEmpty
       //     ? consultationList[0]['id']
       //     : null;
-      print('widget ${widget.allTests}');
+
       final List testIds = widget.allTests.map((test) => test['id']).toList();
 
       for (final id in testIds) {
@@ -326,10 +326,21 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
       }
       final bool consultationTest =
           widget.allTests[0]['Patient']['isTestOnly'] ?? false;
-      print('consultationTest $consultationTest');
+      final con = await ConsultationService().getConsultationByID(
+        id: consultationId,
+      );
+
+      final bool isIP =
+          con['data']['status'].toString().toUpperCase() == 'ADMITTED';
+
       if (consultationId != null) {
         await ConsultationService().updateConsultation(consultationId, {
-          'status': consultationTest == false ? 'ENDPROCESSING' : "COMPLETED",
+          'status': consultationTest == false
+              ? 'ENDPROCESSING'
+              : isIP
+              ? 'ADMITTED'
+              : "COMPLETED",
+
           'scanningTesting': false,
           'updatedAt': _dateTime,
         });

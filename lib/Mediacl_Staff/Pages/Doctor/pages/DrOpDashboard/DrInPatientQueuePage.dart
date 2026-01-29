@@ -10,7 +10,7 @@ import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../widgets/doctor_description_edit.dart';
-import '../patient_description/patient_description_page.dart';
+import '../patient_description_in_patient/patient_description_page.dart';
 
 class DrInPatientQueuePage extends StatefulWidget {
   final String role;
@@ -67,12 +67,8 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
 
         doctorId = matchedDoctor?['assignDoctorId'];
       }
-      // widget.role == 'doctor'
-      //     ?
-      //     :  final staffData = await AdminService().getMedicalStaff();;
-
       final allConsultations = await ConsultationService()
-          .getAllDrConsultationDrQueue(doctorId: doctorId);
+          .getAllDrConsultationDrQueueIP(doctorId: doctorId);
 
       if (mounted) {
         setState(() {
@@ -90,26 +86,30 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
   List<dynamic> _filteredConsultations() {
     if (consultations.isEmpty) return [];
 
+    // Edit tab
     if (selectedIndex == 2) {
-      // Show edit tab (can be empty list; handled differently in build)
       return [];
     }
-    if (selectedIndex == 0) {
-      return consultations.where((c) {
-        final status = (c['status'] ?? '').toString().toLowerCase();
-        final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
-        return (status == 'pending' || status == 'endprocessing') &&
-            queueStatus == 'drqueue';
-      }).toList();
-    } else if (selectedIndex == 1) {
-      return consultations.where((c) {
-        final status = (c['status'] ?? '').toString().toLowerCase();
-        final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
-        return (status == 'pending' || status == 'endprocessing') &&
-            queueStatus == 'ongoing';
-      }).toList();
-    }
-    return consultations;
+
+    return consultations.where((c) {
+      final status = (c['status'] ?? '').toString().toLowerCase();
+      final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+
+      // IP patients are always ADMITTED
+      if (status != 'admitted') return false;
+
+      if (selectedIndex == 0) {
+        // 🟡 Pending Patients
+        return queueStatus == 'pending' || queueStatus == 'drqueue';
+      }
+
+      if (selectedIndex == 1) {
+        // 🟢 Consulting Patients
+        return queueStatus == 'ongoing';
+      }
+
+      return false;
+    }).toList();
   }
 
   Color _getBorderColor(String? gender) {
@@ -235,8 +235,8 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
             .toLowerCase();
 
         // 🔥 Only update the first time (Pending → Ongoing)
-        if (currentQueueStatus == 'drqueue' ||
-            currentQueueStatus == 'DRQUEUE') {
+        if (currentQueueStatus == 'pending' ||
+            currentQueueStatus == 'drqueue') {
           await ConsultationService.updateQueueStatus(
             consultation['id'],
             'ONGOING',
@@ -248,7 +248,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
           result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => PatientDescriptionPage(
+              builder: (_) => PatientDescriptionIn(
                 consultation: consultation,
                 mode: mode,
                 role: widget.role,
@@ -414,7 +414,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                   ),
 
                   const Text(
-                    "Outpatient Queue",
+                    "Inpatient Queue",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -444,79 +444,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
           ),
         ),
       ),
-      // body: isInitialLoad
-      //     ? const Center(child: CircularProgressIndicator())
-      //     : consultations.isEmpty
-      //     ? _buildEmptyState()
-      //     : Column(
-      //         children: [
-      //           const SizedBox(height: 2),
-      //           selectedIndex == 2
-      //               ? SizedBox() // <-- Show edit tab here
-      //               : Container(
-      //                   margin: const EdgeInsets.symmetric(
-      //                     horizontal: 20,
-      //                     vertical: 10,
-      //                   ),
-      //                   padding: const EdgeInsets.symmetric(
-      //                     horizontal: 16,
-      //                     vertical: 14,
-      //                   ),
-      //                   decoration: BoxDecoration(
-      //                     color: primaryColor.withValues(alpha: 0.1),
-      //                     borderRadius: BorderRadius.circular(14),
-      //                     border: Border.all(color: primaryColor),
-      //                   ),
-      //                   child: Row(
-      //                     mainAxisAlignment: MainAxisAlignment.center,
-      //                     children: [
-      //                       Icon(Icons.people_alt_rounded, color: primaryColor),
-      //                       const SizedBox(width: 8),
-      //                       Text(
-      //                         selectedIndex == 0
-      //                             ? "Pending Patients"
-      //                             : "Consulting Patients",
-      //                         style: TextStyle(
-      //                           fontSize: 17,
-      //                           fontWeight: FontWeight.bold,
-      //                           color: primaryColor,
-      //                         ),
-      //                       ),
-      //                       const SizedBox(width: 6),
-      //                       Text(
-      //                         "( ${_filteredConsultations().length} )",
-      //                         style: const TextStyle(
-      //                           color: Colors.black87,
-      //                           fontSize: 15,
-      //                         ),
-      //                       ),
-      //                     ],
-      //                   ),
-      //                 ),
-      //           Expanded(
-      //             child: RefreshIndicator(
-      //               color: primaryColor,
-      //               onRefresh: () => _fetchConsultations(showLoading: false),
-      //               child: selectedIndex == 2
-      //                   ? EditTestScanTab() // <-- Show edit tab here
-      //                   : ListView.builder(
-      //                       padding: const EdgeInsets.symmetric(
-      //                         horizontal: 16,
-      //                         vertical: 5,
-      //                       ),
-      //                       itemCount: _filteredConsultations().length,
-      //                       itemBuilder: (context, index) {
-      //                         final consultation =
-      //                             _filteredConsultations()[index];
-      //                         return _buildPatientCard(
-      //                           Map<String, dynamic>.from(consultation),
-      //                         );
-      //                       },
-      //                     ),
-      //             ),
-      //           ),
-      //         ],
-      //       ),
+
       body: isInitialLoad
           ? const Center(child: CircularProgressIndicator())
           : Column(
