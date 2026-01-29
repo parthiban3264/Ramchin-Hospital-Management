@@ -29,7 +29,10 @@ String calculateAge(String? dob) {
   }
 }
 
-PreferredSize buildAppbar({required BuildContext context}) {
+PreferredSize buildAppbar({
+  required BuildContext context,
+  required String scan,
+}) {
   return PreferredSize(
     preferredSize: const Size.fromHeight(100),
     child: Container(
@@ -57,8 +60,8 @@ PreferredSize buildAppbar({required BuildContext context}) {
                 icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
-              const Text(
-                " CT-Scan",
+              Text(
+                scan,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -145,7 +148,7 @@ Widget buildPatientCard({
                 child: Row(
                   children: [
                     Text(
-                      isPatientExpanded ? "Hide" : "View All",
+                      isPatientExpanded ? "Hide" : "View",
                       style: TextStyle(
                         color: primaryColor,
                         fontWeight: FontWeight.bold,

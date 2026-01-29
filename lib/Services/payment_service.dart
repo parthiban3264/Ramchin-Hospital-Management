@@ -120,7 +120,8 @@ class PaymentService {
       final response = await http.get(
         Uri.parse('$baseUrl/payments/all/pendingFee/$hospitalId'),
       );
-
+      print(response.body);
+      print('response.body');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 
@@ -142,6 +143,7 @@ class PaymentService {
               status == 'cancelled' ||
               status == 'partially_paid';
         }).toList();
+        print('pending $pending');
 
         // Sort by createdAt (oldest first)
         pending.sort((b, a) {
