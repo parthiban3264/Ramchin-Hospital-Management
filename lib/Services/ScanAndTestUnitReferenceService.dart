@@ -17,7 +17,7 @@ class ScanAndTestUnitReferenceService {
     }
   }
 
-  /// Get all unit references by hospital
+  /// Get all unit references by hospitals
   Future<List<dynamic>> getByHospital(int hospitalId) async {
     final res = await http.get(Uri.parse('$baseUrl/hospital/$hospitalId'));
 
