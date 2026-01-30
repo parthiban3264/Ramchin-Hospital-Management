@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../Admin/Pages/AdminEditProfilePage.dart';
+import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../utils/utils.dart';
 
-const Color royalblue = Color(0xFF854929);
+const Color royalBlue = Color(0xFF854929);
 const Color royal = Color(0xFF875C3F);
 const Color royalLight = Color(0xFF916542);
 

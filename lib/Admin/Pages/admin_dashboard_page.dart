@@ -5,44 +5,37 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrInPatientQueuePage.dart';
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOutPatientQueuePage.dart';
-import '../../Mediacl_Staff/Pages/Medical/MedicalQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Page/GynPage.dart';
+import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/dr_out_patient_queue_page.dart';
+import '../../Mediacl_Staff/Pages/Medical/medical_queue_page.dart';
+
 import '../../Mediacl_Staff/Pages/OutPatient/Page/scan_page.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/outer_testPayment_queue.dart';
+
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/scan_queue.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/patient_registration/PatientRegistrationPage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/AbdomenQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/CtScanQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/DopplerQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/ECHOQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/EcgQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/EegQueuePage.dart';
+
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/FeesQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/GynQueuePage.dart';
+
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/InjectionQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/LabQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/MriScanQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/OpQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/OpstetricsQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/PetScanQueuePage.dart';
+import '../../Mediacl_Staff/Pages/OutPatient/Queue/lab_queue_page.dart';
+
+import '../../Mediacl_Staff/Pages/OutPatient/Queue/op_queue_page.dart';
+
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/UltersoundQueuePage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/X-RayQueuePage.dart';
+
 import '../../Mediacl_Staff/Pages/inpatient/add_admission_charges_page.dart';
-import '../../Mediacl_Staff/Pages/inpatient/add_rooms.dart';
+
 import '../../Mediacl_Staff/Pages/inpatient/admit_patient.dart';
 import '../../Mediacl_Staff/Pages/inpatient/assign_change_detail.dart';
 import '../../Mediacl_Staff/Pages/inpatient/available_room.dart';
 import '../../Mediacl_Staff/Pages/inpatient/room_patient_details.dart';
 import '../../Mediacl_Staff/Pages/tracking_status/track_patient_status.dart';
 import '../../Services/admin_service.dart';
-import 'Accounts/AccountsDrawerPage.dart';
-import 'Accounts/ExpensePage.dart';
-import 'Accounts/FinancePage.dart';
-import 'Accounts/IncomeExpensePage.dart';
+import 'Accounts/accounts_drawer_page.dart';
+import 'Accounts/expense_page.dart';
+import 'Accounts/finance_page.dart';
+import 'Accounts/income_expense_page.dart';
 import 'Accounts/accounts_report.dart';
-import 'Accounts/patient_list_reportpage.dart';
+import 'Accounts/patient_list_report_page.dart';
 
 class AdminOpDashboardPage extends StatefulWidget {
   const AdminOpDashboardPage({super.key});
@@ -90,8 +83,6 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
     setState(() {
       doctorPermissionIds = perms.map<int>((e) => e as int).toList();
     });
-
-    print("Cashier Permissions Loaded: $doctorPermissionIds");
   }
   // Future<void> _loadDrOpData() async {
   //   final profile = await AdminService().getProfile();

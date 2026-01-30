@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
-import 'TonicAddPage.dart';
+import 'tonic_add_page.dart';
 import 'expiry_tonic_page.dart';
 import 'modify_tonic_page.dart';
 

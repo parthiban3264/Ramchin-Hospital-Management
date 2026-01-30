@@ -43,11 +43,9 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
 
   String searchText = "";
   bool isLoadingPage = true;
-  bool _isLoading = false;
 
-  // Track toggle loading for each staff ID
   Map<int, bool> toggleLoading = {};
-  // Track reset password loading per staff ID
+
   Map<int, bool> resetLoading = {};
 
   @override
@@ -127,22 +125,20 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
   }
 
   Future<void> resetPassword(int staffId) async {
-    print('work $staffId'); // ✅ should print now
     setState(() {
-      resetLoading[staffId] = true; // show loader immediately
+      resetLoading[staffId] = true;
     });
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final String hospitalId = prefs.getString("hospitalId") ?? "";
-      final String userId = prefs.getString("userId") ?? "";
+      // final String userId = prefs.getString("userId") ?? "";
 
       final response = await http.patch(
         Uri.parse('$baseUrl/auth/admin/reset_password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'hospitalId': hospitalId, 'userId': staffId}),
       );
-      print('response ${response.body}');
 
       if (!mounted) return;
 
@@ -157,9 +153,9 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
       if (!mounted) return;
       _showMessage("❌ Error: $e");
     } finally {
-      if (!mounted) return;
+      // if (!mounted) return;
       setState(() {
-        resetLoading[staffId] = false; // hide loader
+        resetLoading[staffId] = false;
       });
     }
   }

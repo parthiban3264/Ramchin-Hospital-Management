@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../../../Widgets/global_notifiers.dart';
-import '../Page/GynPage.dart';
+import '../Page/gyn_page.dart';
 import '../Page/X-RayPage.dart';
 import '../Queue/GynQueuePage.dart';
 

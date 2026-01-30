@@ -27,7 +27,6 @@ class _AdministratorHomeState extends State<AdministratorHome> {
     int adminCount = 0;
     int doctorCount = 0;
     int staffCount = 0;
-    int patientCount = 0;
 
     for (var a in admins) {
       final role = (a["role"] ?? "").toString().toLowerCase();
@@ -490,7 +489,7 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                               padding: EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: roleColor.withOpacity(0.15),
+                                color: roleColor.withValues(alpha: 0.15),
                               ),
                               child: Icon(
                                 Icons.person,
@@ -530,7 +529,7 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: roleColor.withOpacity(0.15),
+                                color: roleColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(

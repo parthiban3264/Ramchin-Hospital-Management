@@ -11,7 +11,7 @@ import 'widgets/patient_list_report_pdf.dart';
 enum ReportType { daily, monthly, yearly }
 
 class PatientListReportPage extends StatefulWidget {
-  const PatientListReportPage({Key? key}) : super(key: key);
+  const PatientListReportPage({super.key});
 
   @override
   State<PatientListReportPage> createState() => _PatientListReportPageState();
@@ -29,10 +29,10 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
   int selectedDay = DateTime.now().day;
   String selectedMonth = DateFormat.MMMM().format(DateTime.now());
   int selectedYear = DateTime.now().year;
-  bool _isGenerating = false;
+  bool isGenerating = false;
   bool _includeAllPatientsDaily = false;
   bool _includeAllPatientsMonthly = false;
-  int _currentTabIndex = 0; // <-- track selected tab
+  int _currentTabIndex = 0;
   bool _isPageLoading = true;
 
   // Hospital Info
@@ -711,7 +711,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
     bool toggleValue = false,
     Function(bool)? onToggleChanged,
   }) {
-    final bool isDisabled = value.trim().isEmpty || isLoading;
+    // final bool isDisabled = value.trim().isEmpty || isLoading;
     //final filteredDataEmpty = _filterPayments(typeFromTitle(title)).isEmpty;
     bool filteredDataEmpty;
 
@@ -734,7 +734,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 6),
           ),
@@ -820,7 +820,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                         horizontal: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: themeColor.withOpacity(0.12),
+                        color: themeColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -904,7 +904,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [themeColor, themeColor.withOpacity(0.85)],
+                colors: [themeColor, themeColor.withValues(alpha: 0.85)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -944,7 +944,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.08),
+                    color: themeColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: content,

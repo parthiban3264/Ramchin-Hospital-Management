@@ -826,24 +826,23 @@ class _ScanningPageState extends State<ScanningPage> {
       setState(() {
         scanningTesting = true;
       });
-      final consultation = await ConsultationService().updateConsultation(
-        consultationId,
-        {
-          'status': 'ONGOING',
-          'scanningTesting': scanningTesting,
-          // 'medicineTonic': medicineTonicInjection,
-          // 'Injection': injection,
-          'queueStatus': 'COMPLETED',
-          'updatedAt': _dateTime.toString(),
-        },
-      );
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Scan submitted!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      await ConsultationService().updateConsultation(consultationId, {
+        'status': 'ONGOING',
+        'scanningTesting': scanningTesting,
+        // 'medicineTonic': medicineTonicInjection,
+        // 'Injection': injection,
+        'queueStatus': 'COMPLETED',
+        'updatedAt': _dateTime.toString(),
+      });
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Scan submitted!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
